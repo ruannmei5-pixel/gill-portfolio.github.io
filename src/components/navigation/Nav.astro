@@ -1,0 +1,188 @@
+---
+import { navItems, aiNavItem } from "@data/nav";
+import StatusIndicator from "@components/ui/StatusIndicator.astro";
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-border-subtle bg-void/85 backdrop-blur"
+>
+  <div class="container-content flex h-16 items-center justify-between">
+    <a
+      href="#top"
+      class="font-display text-lg font-medium tracking-tight text-ink transition-colors duration-250 hover:text-signal-bright"
+    >
+      GILL<span class="text-signal">.</span>
+    </a>
+
+    <nav class="hidden items-center gap-7 md:flex" aria-label="Primary">
+      <ul class="flex items-center gap-7" data-nav-links>
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                data-nav-target={item.href.replace("#", "")}
+                class="group relative py-1 text-sm text-ink-muted transition-colors duration-250 hover:text-ink data-[active=true]:text-signal-bright"
+              >
+                {item.label}
+                <span
+                  aria-hidden="true"
+                  class="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-signal transition-transform duration-250 group-hover:scale-x-100 group-data-[active=true]:scale-x-100"
+                ></span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a
+        href={aiNavItem.href}
+        class="rounded-sm border border-border-strong px-3 py-1.5 font-mono text-xs text-signal-bright transition-colors duration-250 hover:border-signal-dim hover:bg-signal-wash"
+      >
+        {aiNavItem.label}
+      </a>
+      <StatusIndicator label="ascending" />
+    </nav>
+
+    <button
+      id="menu-toggle"
+      type="button"
+      class="flex h-10 w-10 items-center justify-center rounded border border-border-subtle text-ink transition-colors duration-250 hover:border-signal-dim md:hidden"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <span class="sr-only">Toggle menu</span>
+      <svg
+        id="menu-icon-open"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M2 4.5H16M2 9H16M2 13.5H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+      <svg
+        id="menu-icon-close"
+        width="18"
+        height="18"
+        viewBox="0 0 18 18"
+        fill="none"
+        class="hidden"
+        aria-hidden="true"
+      >
+        <path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <div
+    id="mobile-menu"
+    class="hidden max-h-0 overflow-hidden border-b border-border-subtle bg-void transition-[max-height] duration-250 ease-out md:hidden"
+  >
+    <ul class="container-content flex flex-col gap-1 py-4">
+      {
+        navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              data-nav-target={item.href.replace("#", "")}
+              class="block rounded border-l-2 border-transparent px-2 py-3 text-ink-muted transition-colors duration-250 hover:bg-surface hover:text-ink data-[active=true]:border-signal data-[active=true]:text-signal-bright"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a
+          href={aiNavItem.href}
+          class="block rounded px-2 py-3 font-mono text-signal-bright hover:bg-surface"
+        >
+          {aiNavItem.label}
+        </a>
+      </li>
+    </ul>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById("menu-toggle");
+  const menu = document.getElementById("mobile-menu");
+  const iconOpen = document.getElementById("menu-icon-open");
+  const iconClose = document.getElementById("menu-icon-close");
+
+  const openMenu = () => {
+    if (!menu) return;
+    menu.classList.remove("hidden");
+    // Read the natural height, then animate to it.
+    menu.style.maxHeight = `${menu.scrollHeight}px`;
+  };
+  const closeMenu = () => {
+    if (!menu) return;
+    menu.style.maxHeight = "0px";
+  };
+
+  if (toggle && menu) {
+    toggle.addEventListener("click", () => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+      iconOpen?.classList.toggle("hidden", !isOpen);
+      iconClose?.classList.toggle("hidden", isOpen);
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    menu.addEventListener("transitionend", () => {
+      if (toggle.getAttribute("aria-expanded") === "false") {
+        menu.classList.add("hidden");
+      }
+    });
+
+    // Close the mobile menu after a link is chosen.
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        toggle.setAttribute("aria-expanded", "false");
+        closeMenu();
+        iconOpen?.classList.remove("hidden");
+        iconClose?.classList.add("hidden");
+      });
+    });
+  }
+
+  // Active-section highlighting: mirrors ProgressRail's scroll
+  // tracking, but per-section rather than an overall percentage.
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>("[data-nav-target]");
+  const sections = Array.from(navLinks)
+    .map((link) => document.getElementById(link.dataset.navTarget || ""))
+    .filter((el): el is HTMLElement => Boolean(el));
+
+  if (sections.length && navLinks.length) {
+    const setActive = (id: string | null) => {
+      navLinks.forEach((link) => {
+        const isActive = link.dataset.navTarget === id;
+        if (isActive) {
+          link.setAttribute("data-active", "true");
+        } else {
+          link.removeAttribute("data-active");
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) {
+          setActive(visible.target.id);
+        }
+      },
+      { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+  }
+</script>

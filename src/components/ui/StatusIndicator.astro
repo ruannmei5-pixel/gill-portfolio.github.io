@@ -1,0 +1,21 @@
+---
+export interface Props {
+  label: string;
+  active?: boolean;
+  class?: string;
+  style?: string;
+}
+
+const { label, active = true, class: className = "", style } = Astro.props;
+---
+
+<span class={`inline-flex items-center gap-2 font-mono text-xs text-ink-muted ${className}`} style={style}>
+  <span
+    class:list={[
+      "h-1.5 w-1.5 rounded-full",
+      active ? "bg-signal" : "bg-ink-faint",
+    ]}
+    aria-hidden="true"
+  ></span>
+  {label}
+</span>

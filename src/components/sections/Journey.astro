@@ -1,0 +1,28 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import JourneyMilestoneCard from "@components/cards/JourneyMilestoneCard.astro";
+import { journey } from "@data/journey";
+---
+
+<SectionShell id="journey" backdrop>
+  <SectionHeader
+    index="02"
+    eyebrow="The Ascent"
+    title="From minus to peak"
+    description="A journey of finding direction, leaving the comfort zone, and learning to build something meaningful."
+    emphasis
+  />
+
+  <ol class="mt-4">
+    {
+      journey.map((milestone, i) => (
+        <JourneyMilestoneCard milestone={milestone} isLast={i === journey.length - 1} />
+      ))
+    }
+  </ol>
+
+  <p class="mt-4 max-w-prose border-l-2 border-signal-dim pl-4 font-display text-lg uppercase tracking-[0.03em] text-ink-muted md:text-xl">
+    The peak is not the destination.<br />It is the direction.
+  </p>
+</SectionShell>

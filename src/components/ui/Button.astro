@@ -1,0 +1,30 @@
+---
+export interface Props {
+  href?: string;
+  variant?: "primary" | "secondary" | "ghost";
+  type?: "button" | "submit";
+  class?: string;
+}
+
+const { href, variant = "primary", type = "button", class: className = "" } = Astro.props;
+
+const base =
+  "inline-flex items-center justify-center gap-2 rounded px-5 py-3 text-sm font-medium " +
+  "transition-[color,background-color,border-color,box-shadow,transform] duration-250 " +
+  "focus-visible:outline-2 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0 motion-safe:active:scale-[0.97]";
+
+const variants: Record<string, string> = {
+  primary:
+    "bg-signal text-void hover:bg-signal-bright hover:shadow-[0_0_28px_-6px_var(--color-signal-glow)]",
+  secondary:
+    "border border-border-strong text-ink hover:border-signal-dim hover:text-signal-bright bg-transparent hover:bg-signal-wash",
+  ghost: "text-ink-muted hover:text-ink bg-transparent",
+};
+
+const classes = `${base} ${variants[variant]} ${className}`;
+const Tag = href ? "a" : "button";
+---
+
+<Tag class={classes} href={href} type={!href ? type : undefined}>
+  <slot />
+</Tag>

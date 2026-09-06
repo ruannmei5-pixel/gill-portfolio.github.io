@@ -1,0 +1,99 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import ExperienceCard from "@components/cards/ExperienceCard.astro";
+import ArchitectureFlow from "@components/cards/ArchitectureFlow.astro";
+import {
+  experienceEntries,
+  experienceCategories,
+  experienceApproachFlow,
+  networkingFlow,
+} from "@data/experience";
+
+const filters = [{ id: "all", label: "All" }, ...experienceCategories.map((c) => ({ id: c.id, label: c.label }))];
+---
+
+<SectionShell id="experience">
+  <SectionHeader
+    index="06"
+    eyebrow="Hands-On Experience"
+    title="Beyond the classroom"
+    description="Technical work, experiments, school activities, and hands-on problem solving that helped turn theory into practice."
+  />
+
+  <!-- General approach — a structural shape this work tends to follow,
+       never claimed as a formal methodology. -->
+  <div class="rounded-md border border-border-subtle bg-void-raised/60 p-6 shadow-panel">
+    <ArchitectureFlow
+      steps={experienceApproachFlow}
+      direction="horizontal"
+      label="How this section is structured"
+      note="A general shape this kind of work tends to follow — not a formal methodology."
+    />
+  </div>
+
+  <!-- Networking spotlight — given stronger visual emphasis per the
+       brief. Wording stays exploratory: this is practice, not
+       professional network-engineering experience. -->
+  <div class="mt-6 rounded-md border border-signal-dim bg-signal-wash p-6">
+    <p class="font-mono text-xs uppercase tracking-[0.15em] text-signal-bright">Networking practice</p>
+    <p class="mt-2 max-w-prose text-sm text-ink-muted">
+      Exploring and practicing networking concepts — from device configuration up to
+      real topology — through school coursework and a national-level MikroTik
+      olympiad.
+    </p>
+    <ArchitectureFlow steps={networkingFlow} direction="vertical" class="mt-5" />
+  </div>
+
+  <!-- Category filter — simple show/hide, no dependency added. -->
+  <div class="mt-8 flex flex-wrap gap-2" role="group" aria-label="Filter experience by category">
+    {
+      filters.map((filter, i) => (
+        <button
+          type="button"
+          data-experience-filter={filter.id}
+          data-active={i === 0 ? "true" : "false"}
+          aria-pressed={i === 0 ? "true" : "false"}
+          class="rounded-sm border border-border-subtle px-3 py-1.5 font-mono text-xs uppercase tracking-wide text-ink-muted transition-colors duration-250 hover:border-signal-dim hover:text-ink data-[active=true]:border-signal-dim data-[active=true]:font-semibold data-[active=true]:text-signal-bright"
+        >
+          {filter.label}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      experienceEntries.map((entry) => (
+        <div data-experience-category={entry.categoryGroup} class="motion-safe:animate-fade-up">
+          <ExperienceCard entry={entry} />
+        </div>
+      ))
+    }
+  </div>
+
+  <p class="mt-10 max-w-prose border-l-2 border-signal-dim pl-4 text-ink-muted">
+    This is where the skills above have actually been put into practice — hands-on,
+    and still learning, not a finished expertise.
+  </p>
+</SectionShell>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-experience-filter]");
+  const cards = document.querySelectorAll<HTMLElement>("[data-experience-category]");
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.experienceFilter;
+      buttons.forEach((b) => {
+        const isActive = b === button;
+        b.setAttribute("data-active", String(isActive));
+        b.setAttribute("aria-pressed", String(isActive));
+      });
+      cards.forEach((card) => {
+        const show = filter === "all" || card.dataset.experienceCategory === filter;
+        card.classList.toggle("hidden", !show);
+      });
+    });
+  });
+</script>

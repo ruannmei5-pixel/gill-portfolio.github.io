@@ -1,0 +1,23 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import Button from "@components/ui/Button.astro";
+import { profile } from "@data/profile";
+
+const { contact } = profile;
+---
+
+<SectionShell id="contact">
+  <SectionHeader
+    index="09"
+    title="Contact"
+    description="Open to internships, collaborations, and conversations about networking, web development, or AI."
+  />
+
+  <div class="flex flex-wrap items-center gap-4">
+    <Button href={`mailto:${contact.email}`} variant="primary">Email</Button>
+    <Button href={contact.linkedin} variant="secondary">LinkedIn</Button>
+    <Button href={contact.github} variant="secondary">GitHub</Button>
+    <Button href={contact.instagram} variant="secondary">Instagram</Button>
+  </div>
+</SectionShell>

@@ -1,0 +1,19 @@
+---
+export interface Props {
+  tone?: "neutral" | "signal";
+  class?: string;
+}
+
+const { tone = "neutral", class: className = "" } = Astro.props;
+
+const tones: Record<string, string> = {
+  neutral: "border-border-subtle text-ink-muted",
+  signal: "border-signal-dim text-signal-bright",
+};
+---
+
+<span
+  class={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-wide ${tones[tone]} ${className}`}
+>
+  <slot />
+</span>

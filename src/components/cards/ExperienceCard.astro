@@ -1,0 +1,70 @@
+---
+import type { ExperienceEntry, ExperienceType } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import TechTag from "@components/ui/TechTag.astro";
+import { projects } from "@data/projects";
+import { hoverCardGlow, hoverTechTag } from "@/lib/ui";
+
+export interface Props {
+  entry: ExperienceEntry;
+}
+
+const { entry } = Astro.props;
+
+const typeLabel: Record<ExperienceType, string> = {
+  "hands-on-practice": "Hands-On Practice",
+  "school-project": "School Project",
+  "lab-work": "Lab Work",
+  "technical-practice": "Technical Practice",
+  "personal-experiment": "Personal Experiment",
+  "networking-practice": "Networking Practice",
+  "server-practice": "Server Practice",
+  "lab-environment": "Lab Environment",
+};
+
+const relatedProjects = (entry.relatedProjectIds ?? [])
+  .map((id) => projects.find((project) => project.id === id))
+  .filter((project): project is NonNullable<typeof project> => Boolean(project));
+
+// Networking entries get stronger visual weight via the signal Badge
+// above, not a border-color override — same reasoning SkillCard
+// documents for primary vs. support (Card's base border-color utility
+// is never fought with a same-specificity class).
+const cardClasses = `group relative flex h-full flex-col ${hoverCardGlow}`;
+---
+
+<Card as="article" class={cardClasses}>
+  <div class="flex items-start justify-between gap-3">
+    <p class="font-mono text-xs uppercase tracking-wide text-ink-faint">{entry.categoryLabel}</p>
+    {entry.featured ? <Badge tone="signal">Networking focus</Badge> : null}
+  </div>
+
+  <h3 class="mt-2 font-display text-lg text-ink">{entry.title}</h3>
+
+  <p class="mt-3 text-sm text-ink-muted">{entry.description}</p>
+
+  <div class="mt-4 flex flex-wrap gap-2">
+    {entry.technologies.map((tech) => <TechTag class={hoverTechTag}>{tech}</TechTag>)}
+  </div>
+
+  <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+    <Badge tone="neutral">{typeLabel[entry.type]}</Badge>
+
+    {
+      relatedProjects.length > 0 ? (
+        <p class="font-mono text-[0.6875rem] text-ink-faint">
+          See{" "}
+          {relatedProjects.map((project, i) => (
+            <>
+              <a href="#projects" class="text-signal-bright hover:underline">
+                {project.title}
+              </a>
+              {i < relatedProjects.length - 1 ? " / " : null}
+            </>
+          ))}
+        </p>
+      ) : null
+    }
+  </div>
+</Card>

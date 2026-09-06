@@ -1,0 +1,58 @@
+---
+import type { SkillCategory, SkillStatus } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import StatusIndicator from "@components/ui/StatusIndicator.astro";
+import TechTag from "@components/ui/TechTag.astro";
+import { hoverCardGlow, hoverTechTag } from "@/lib/ui";
+
+export interface Props {
+  category: SkillCategory;
+}
+
+const { category } = Astro.props;
+
+const statusLabel: Record<SkillStatus, string> = {
+  exploring: "Exploring",
+  learning: "Learning",
+  building: "Building",
+  "working-with": "Working with",
+};
+
+// Card.astro already sets `border-border-subtle` as part of its base
+// class string, so distinguishing primary/support here relies only on
+// non-conflicting additions (border-style, not border-color) to avoid
+// two same-specificity Tailwind utilities racing for the same
+// property. Support categories borrow the dashed treatment already
+// used by EmptyState for "not a core pillar yet".
+const cardClasses =
+  `group relative flex h-full flex-col ${hoverCardGlow} ` +
+  (category.primary ? "" : "border-dashed opacity-90");
+---
+
+<Card as="article" class={cardClasses}>
+  <div class="flex items-start justify-between gap-3">
+    <h3 class="font-mono text-xs uppercase tracking-wide text-ink-faint">
+      {category.label}
+    </h3>
+    {category.primary ? <Badge tone="signal">Core focus</Badge> : null}
+  </div>
+
+  <StatusIndicator
+    label={statusLabel[category.status]}
+    active={category.status !== "exploring"}
+    class="mt-3"
+  />
+
+  <p class="mt-3 text-sm text-ink-muted">{category.description}</p>
+
+  <div class="mt-4 flex flex-wrap gap-2 pt-1">
+    {
+      category.skills.map((skill) => (
+        <TechTag class={hoverTechTag}>
+          {skill}
+        </TechTag>
+      ))
+    }
+  </div>
+</Card>

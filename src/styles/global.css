@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens
+  -------------
+  A single source of truth so the theme (currently: dark, signal-teal
+  accent) can be swapped later without touching component markup.
+  Keep this file the only place raw color/type values are declared.
+*/
+:root {
+  /* Surfaces — a near-black with a faint cool tint, not a flat #000/#111 */
+  --color-void: #0a0b0d;
+  --color-void-raised: #0d0f12;
+  --color-surface: #14171c;
+  --color-surface-raised: #1a1e24;
+  --color-surface-hover: #20252c;
+
+  /* Borders */
+  --color-border-subtle: #262b33;
+  --color-border-strong: #383f4a;
+
+  /* Type */
+  --color-ink: #e8eaed;
+  --color-ink-muted: #9aa2ad;
+  /* Phase 10: lightened from #5b626d — the original value sat at
+     ~3.2:1 against --color-void, below WCAG AA (4.5:1) for the small
+     mono labels/hints/timestamps this token is used for everywhere.
+     #78808c keeps it clearly the dimmest of the three ink tones while
+     clearing 4.5:1 on both --color-void and --color-surface. */
+  --color-ink-faint: #78808c;
+
+  /* Accent — Phase 02: signal teal replaced with a desaturated,
+     premium violet. It still reads as instrumentation (a status
+     light, a trace on an oscilloscope, a network link light) rather
+     than a decorative brand color — the token names ("signal") are
+     kept as-is so no component markup needs to change when the
+     theme is adjusted again later; only these values move.
+     Kept deliberately restrained (not neon/glow-heavy) so it reads
+     technical and mature rather than gaming/crypto. */
+  --color-signal: #8b6ff2;
+  --color-signal-dim: #4d3a8f;
+  --color-signal-bright: #b3a1ff;
+  /* Soft glow used sparingly for premium emphasis (CTA hover, terminal
+     border, avatar ring) — never as a full-bleed background wash. */
+  --color-signal-glow: rgba(139, 111, 242, 0.35);
+  /* An even fainter tint for hover backgrounds (secondary buttons, the
+     AI nav link) — a wash, not a wall of color. */
+  --color-signal-wash: rgba(139, 111, 242, 0.08);
+
+  /* Type families */
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* Layout */
+  --content-padding-inline: clamp(1.25rem, 5vw, 4rem);
+  --rail-width: 3px;
+}
+
+@media (prefers-color-scheme: light) {
+  /* The portfolio is intentionally dark-only (see brief): the design
+     concept — instrumentation, terminal, elevation-at-night — does not
+     hold in a light theme. We keep the dark palette regardless of the
+     OS preference rather than half-adapting it. */
+  :root {
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-void);
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+  Section reveal (Phase 11)
+  -------------------------
+  A single, quiet opacity/translateY treatment applied to each
+  section's content wrapper via [data-reveal] (see SectionShell.astro)
+  and toggled by the IntersectionObserver in BaseLayout.astro.
+
+  Progressive-enhancement safety net: content defaults to visible.
+  Only once JS confirms it's running (html.js-reveal) does content
+  start hidden pending its turn in the viewport — so a JS failure,
+  slow script load, or disabled JS never hides real content.
+*/
+html.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+html.js-reveal [data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-reveal [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Visible, deliberate focus ring — never suppressed */
+:focus-visible {
+  outline: 2px solid var(--color-signal-bright);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background-color: var(--color-signal-dim);
+  color: var(--color-ink);
+}
+
+/* Thin, quiet scrollbar consistent with the instrumentation feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+
+@layer components {
+  .container-content {
+    @apply mx-auto w-full max-w-content;
+    padding-inline: var(--content-padding-inline);
+  }
+
+  /* Faint elevation contour used as a section backdrop — the mountain
+     metaphor rendered as instrumentation rather than illustration. */
+  .contour-backdrop {
+    background-image: repeating-linear-gradient(
+      to top,
+      transparent 0,
+      transparent 63px,
+      var(--color-border-subtle) 64px
+    );
+    mask-image: linear-gradient(to bottom, transparent, black 30%, black 85%, transparent);
+  }
+}

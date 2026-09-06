@@ -1,0 +1,14 @@
+---
+export interface Props {
+  message: string;
+  class?: string;
+}
+
+const { message, class: className = "" } = Astro.props;
+---
+
+<div
+  class={`rounded-md border border-dashed border-border-subtle bg-void-raised px-6 py-10 text-center font-mono text-sm text-ink-faint ${className}`}
+>
+  {message}<span class="ml-0.5 inline-block h-[1em] w-[0.5ch] translate-y-[0.15em] bg-ink-faint motion-safe:animate-blink align-middle" aria-hidden="true"></span>
+</div>

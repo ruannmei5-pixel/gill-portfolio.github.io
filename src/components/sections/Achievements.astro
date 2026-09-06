@@ -1,0 +1,75 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import FeaturedAchievementCard from "@components/cards/FeaturedAchievementCard.astro";
+import AchievementCard from "@components/cards/AchievementCard.astro";
+import EmptyState from "@components/ui/EmptyState.astro";
+import { achievements } from "@data/achievements";
+
+const featuredAchievement = achievements.find((achievement) => achievement.featured);
+const highTier = achievements.filter((achievement) => achievement.tier === "high" && !achievement.featured);
+const certifications = achievements.filter((achievement) => achievement.tier === "medium");
+const medals = achievements.filter((achievement) => achievement.tier === "supporting");
+---
+
+<SectionShell id="achievements">
+  <SectionHeader
+    index="07"
+    eyebrow="Achievements"
+    title="Milestones"
+    description="Small milestones that mark the climb."
+  />
+
+  {
+    achievements.length > 0 ? (
+      <>
+        {featuredAchievement ? (
+          <div class="mb-6">
+            <FeaturedAchievementCard achievement={featuredAchievement} />
+          </div>
+        ) : null}
+
+        {highTier.length > 0 ? (
+          <div class="grid gap-5 sm:grid-cols-2">
+            {highTier.map((achievement) => (
+              <AchievementCard achievement={achievement} />
+            ))}
+          </div>
+        ) : null}
+
+        {certifications.length > 0 ? (
+          <div class="mt-10">
+            <h3 class="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint">
+              Certifications
+            </h3>
+            <div class="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {certifications.map((achievement) => (
+                <AchievementCard achievement={achievement} />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {medals.length > 0 ? (
+          <div class="mt-10">
+            <h3 class="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint">
+              Other recognitions
+            </h3>
+            {/* Deliberately plain chips, not full cards — kept visually
+                secondary to the technical achievements above per the
+                brief, and never implied to be technical results. */}
+            <div class="mt-4 flex flex-wrap gap-3">
+              {medals.map((achievement) => (
+                <span class="rounded-sm border border-dashed border-border-subtle px-3 py-2 font-mono text-xs text-ink-faint">
+                  {achievement.title} — {achievement.subtitle}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </>
+    ) : (
+      <EmptyState message="no entries logged yet" />
+    )
+  }
+</SectionShell>

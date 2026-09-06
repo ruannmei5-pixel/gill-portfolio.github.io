@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <!-- Placeholder avatar. Replace this file (or the avatarPlaceholder
+       path in src/data/profile.ts) with a real photo before launch. -->
+  <rect width="240" height="240" rx="16" fill="#14171C" />
+  <rect x="0.5" y="0.5" width="239" height="239" rx="15.5" fill="none" stroke="#262B33" />
+
+  <!-- faint contour lines, echoing the site's elevation motif -->
+  <g stroke="#1A1E24" stroke-width="1">
+    <line x1="0" y1="72" x2="240" y2="72" />
+    <line x1="0" y1="120" x2="240" y2="120" />
+    <line x1="0" y1="168" x2="240" y2="168" />
+  </g>
+
+  <text
+    x="120"
+    y="140"
+    text-anchor="middle"
+    font-family="'Space Grotesk', 'Segoe UI', sans-serif"
+    font-size="64"
+    font-weight="600"
+    fill="#9AA2AD"
+  >RV</text>
+
+  <!-- status dot, matching <StatusIndicator> elsewhere on the site -->
+  <circle cx="198" cy="198" r="10" fill="#14171C" stroke="#0A0B0D" stroke-width="3" />
+  <circle cx="198" cy="198" r="6" fill="#8B6FF2" />
+</svg>

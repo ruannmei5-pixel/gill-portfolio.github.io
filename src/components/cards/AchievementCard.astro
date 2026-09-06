@@ -1,0 +1,72 @@
+---
+import type { Achievement } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import { hoverCardGlow } from "@/lib/ui";
+
+export interface Props {
+  achievement: Achievement;
+}
+
+const { achievement } = Astro.props;
+
+const badgeTone = achievement.tier === "high" ? "signal" : "neutral";
+const badgeLabel = achievement.tier === "high" ? "Milestone" : "Certified";
+---
+
+<Card as="article" class={`group relative flex h-full flex-col ${hoverCardGlow}`}>
+  <div class="flex items-start justify-between gap-3">
+    <p class="font-mono text-xs uppercase tracking-wide text-ink-faint">{achievement.categoryLabel}</p>
+    <Badge tone={badgeTone}>{badgeLabel}</Badge>
+  </div>
+
+  <h3 class="mt-3 font-display text-lg text-ink">{achievement.title}</h3>
+  {
+    achievement.subtitle ? (
+      <p class="mt-1 font-mono text-xs uppercase tracking-wide text-signal-bright">
+        {achievement.subtitle}
+      </p>
+    ) : null
+  }
+
+  <p class="mt-3 text-sm text-ink-muted">{achievement.description}</p>
+
+  {achievement.period ? <p class="mt-4 font-mono text-[0.6875rem] text-ink-faint">{achievement.period}</p> : null}
+
+  {
+    achievement.certificate ? (
+      <div class="mt-4 flex gap-3 border-t border-border-subtle pt-4">
+        <div class="h-14 w-20 shrink-0 overflow-hidden rounded-sm border border-border-subtle bg-void-raised">
+          <img
+            src={achievement.certificate.image ?? "/images/certificate-placeholder.svg"}
+            alt={`${achievement.title} — certificate image placeholder`}
+            class="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <dl class="grid min-w-0 flex-1 grid-cols-2 gap-x-3 gap-y-1">
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">Issuer</dt>
+            <dd class="truncate text-xs text-ink-muted">{achievement.certificate.issuer ?? "Not yet added"}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">Issued</dt>
+            <dd class="truncate text-xs text-ink-muted">{achievement.certificate.issuedDate ?? "Not yet added"}</dd>
+          </div>
+          <div class="col-span-2 min-w-0">
+            <dt class="font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">Verification</dt>
+            <dd class="truncate text-xs">
+              {achievement.certificate.verificationUrl ? (
+                <a href={achievement.certificate.verificationUrl} class="text-signal-bright hover:underline">
+                  {achievement.certificate.verificationUrl}
+                </a>
+              ) : (
+                <span class="text-ink-muted">Not yet added</span>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    ) : null
+  }
+</Card>

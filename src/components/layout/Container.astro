@@ -1,0 +1,13 @@
+---
+export interface Props {
+  class?: string;
+  as?: "div" | "section" | "header" | "footer";
+  [key: `data-${string}`]: string | boolean | undefined;
+}
+const { class: className = "", as = "div", ...rest } = Astro.props;
+const Tag = as;
+---
+
+<Tag class={`container-content ${className}`} {...rest}>
+  <slot />
+</Tag>

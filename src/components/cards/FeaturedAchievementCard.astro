@@ -1,0 +1,78 @@
+---
+import type { Achievement } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import { hoverCardGlow } from "@/lib/ui";
+
+export interface Props {
+  achievement: Achievement;
+}
+
+const { achievement } = Astro.props;
+---
+
+<Card as="article" class={`group relative ${hoverCardGlow}`}>
+  <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+    <span class="font-mono text-5xl text-signal-dim sm:text-6xl" aria-hidden="true">01</span>
+
+    <!-- Inner accent bar on a fresh element (not the Card root) so the
+         permanent left-border color never races with Card.astro's own
+         base border-color utility — same pattern as Journey's closing
+         line / SectionHeader's emphasis mode. -->
+    <div class="border-l-2 border-signal pl-5 sm:pl-6">
+      <Badge tone="signal">{achievement.categoryLabel}</Badge>
+      <h3 class="mt-3 font-display text-3xl uppercase tracking-[0.02em] text-ink sm:text-4xl">
+        {achievement.title}
+      </h3>
+      {
+        achievement.subtitle ? (
+          <p class="mt-1 font-mono text-sm uppercase tracking-[0.1em] text-signal-bright">
+            {achievement.subtitle}
+          </p>
+        ) : null
+      }
+      <p class="mt-4 max-w-prose text-sm text-ink-muted">{achievement.description}</p>
+    </div>
+  </div>
+
+  {
+    achievement.certificate ? (
+      <div class="mt-6 grid gap-5 border-t border-border-subtle pt-6 sm:grid-cols-[160px_1fr] sm:items-center">
+        <div class="overflow-hidden rounded-md border border-border-subtle bg-void-raised">
+          <img
+            src={achievement.certificate.image ?? "/images/certificate-placeholder.svg"}
+            alt={`${achievement.title} — certificate image placeholder`}
+            class="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <dl class="grid grid-cols-2 gap-x-5 gap-y-3">
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">Issuer</dt>
+            <dd class="mt-1 truncate text-sm text-ink-muted">{achievement.certificate.issuer ?? "Not yet added"}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">Issued</dt>
+            <dd class="mt-1 truncate text-sm text-ink-muted">{achievement.certificate.issuedDate ?? "Not yet added"}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">Credential ID</dt>
+            <dd class="mt-1 truncate text-sm text-ink-muted">{achievement.certificate.credentialId ?? "Not yet added"}</dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">Verification</dt>
+            <dd class="mt-1 truncate text-sm">
+              {achievement.certificate.verificationUrl ? (
+                <a href={achievement.certificate.verificationUrl} class="text-signal-bright hover:underline">
+                  {achievement.certificate.verificationUrl}
+                </a>
+              ) : (
+                <span class="text-ink-muted">Not yet added</span>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    ) : null
+  }
+</Card>

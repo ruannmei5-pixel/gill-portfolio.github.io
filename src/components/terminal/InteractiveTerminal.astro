@@ -1,0 +1,181 @@
+---
+import TerminalWindow from "@components/terminal/TerminalWindow.astro";
+import { bootLines } from "@data/terminal";
+
+export interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+const banner = bootLines();
+---
+
+<TerminalWindow title="gill@portfolio" class={className}>
+  <div class="flex flex-col gap-3">
+    <div
+      id="terminal-output"
+      class="max-h-72 space-y-1 overflow-y-auto pr-1"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-label="Terminal output"
+    >
+      {
+        banner.map((textLine, i) => (
+          <div
+            class:list={[
+              "whitespace-pre-wrap break-words",
+              i === 0 ? "text-signal-bright" : "text-ink-muted",
+            ]}
+          >
+            {textLine}
+          </div>
+        ))
+      }
+    </div>
+
+    <form id="terminal-form" class="flex items-start gap-2" autocomplete="off">
+      <label for="terminal-input" class="sr-only">Terminal command input</label>
+      <span class="shrink-0 pt-0.5 text-signal" aria-hidden="true">gill@portfolio:~$</span>
+      <input
+        id="terminal-input"
+        name="command"
+        type="text"
+        class="min-w-0 flex-1 bg-transparent font-mono text-sm text-ink placeholder:text-ink-faint"
+        placeholder="type a command…"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+    </form>
+
+    <p class="font-mono text-[0.6875rem] text-ink-faint">
+      Enter to run · ↑ / ↓ for history · Tab to complete · Ctrl+L to clear
+    </p>
+  </div>
+</TerminalWindow>
+
+<script>
+  import { runCommand, commandNames } from "@data/terminal";
+
+  const output = document.getElementById("terminal-output");
+  const form = document.getElementById("terminal-form") as HTMLFormElement | null;
+  const input = document.getElementById("terminal-input") as HTMLInputElement | null;
+
+  if (output && form && input) {
+    const history: string[] = [];
+    let historyIndex = -1; // -1 = not currently browsing history
+
+    function appendLine(text: string) {
+      const row = document.createElement("div");
+      row.className = "whitespace-pre-wrap break-words";
+
+      const span = document.createElement("span");
+      // Rendered via textContent only — never innerHTML — so nothing
+      // in `text` can ever be interpreted as markup.
+      span.textContent = text;
+      span.className = "text-ink-muted";
+      row.appendChild(span);
+      output!.appendChild(row);
+    }
+
+    function appendPromptEcho(commandText: string) {
+      const row = document.createElement("div");
+      row.className = "whitespace-pre-wrap break-words";
+
+      const promptSpan = document.createElement("span");
+      promptSpan.className = "text-signal";
+      promptSpan.textContent = "gill@portfolio:~$ ";
+      row.appendChild(promptSpan);
+
+      const cmdSpan = document.createElement("span");
+      cmdSpan.className = "text-ink";
+      cmdSpan.textContent = commandText;
+      row.appendChild(cmdSpan);
+
+      output!.appendChild(row);
+    }
+
+    function scrollToBottom() {
+      output!.scrollTop = output!.scrollHeight;
+    }
+
+    function clearOutput() {
+      output!.innerHTML = "";
+    }
+
+    function handleSubmit(value: string) {
+      const trimmed = value.trim();
+      appendPromptEcho(trimmed);
+
+      if (trimmed) {
+        history.push(trimmed);
+      }
+      historyIndex = -1;
+
+      const result = runCommand(trimmed);
+
+      if (result.clearScreen) {
+        clearOutput();
+      } else {
+        for (const l of result.lines) appendLine(l);
+        appendLine("");
+      }
+
+      scrollToBottom();
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = input.value;
+      input.value = "";
+      handleSubmit(value);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowUp") {
+        if (!history.length) return;
+        event.preventDefault();
+        historyIndex = historyIndex === -1 ? history.length - 1 : Math.max(0, historyIndex - 1);
+        input.value = history[historyIndex] ?? "";
+        // Move caret to the end after programmatically setting the value.
+        requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length));
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        if (historyIndex === -1) return;
+        event.preventDefault();
+        if (historyIndex >= history.length - 1) {
+          historyIndex = -1;
+          input.value = "";
+        } else {
+          historyIndex += 1;
+          input.value = history[historyIndex] ?? "";
+        }
+        return;
+      }
+
+      if (event.key === "l" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        clearOutput();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const current = input.value.trim().toLowerCase();
+        if (!current) return;
+        event.preventDefault();
+        const matches = commandNames.filter((name) => name.startsWith(current));
+        if (matches.length === 1) {
+          input.value = matches[0];
+        } else if (matches.length > 1) {
+          appendPromptEcho(input.value);
+          appendLine(matches.join("  "));
+          scrollToBottom();
+        }
+      }
+    });
+  }
+</script>

@@ -1,0 +1,15 @@
+---
+export interface Props {
+  class?: string;
+  as?: "div" | "article" | "li";
+}
+
+const { class: className = "", as = "div" } = Astro.props;
+const Tag = as;
+---
+
+<Tag
+  class={`rounded-md border border-border-subtle bg-surface p-6 shadow-panel ${className}`}
+>
+  <slot />
+</Tag>

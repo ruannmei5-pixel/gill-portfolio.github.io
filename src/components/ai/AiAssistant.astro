@@ -1,0 +1,363 @@
+---
+import TerminalWindow from "@components/terminal/TerminalWindow.astro";
+import { quickQuestions, getGreeting } from "@data/aiKnowledge";
+
+export interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+const greeting = getGreeting();
+---
+
+<TerminalWindow title="GILL AI" class={className}>
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center justify-between gap-2">
+      <p class="font-mono text-[0.6875rem] text-ink-faint">Ask in English or Bahasa Indonesia — Gill AI follows your language.</p>
+      <button
+        type="button"
+        id="ai-clear"
+        class="shrink-0 rounded-sm border border-border-subtle px-2 py-1 font-mono text-[0.6875rem] text-ink-faint transition-colors duration-200 hover:border-signal-dim hover:text-signal-bright"
+        aria-label="Clear conversation"
+      >
+        Clear
+      </button>
+    </div>
+
+    <div
+      id="ai-output"
+      class="max-h-96 space-y-3 overflow-y-auto pr-1"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-label="Conversation with Gill AI"
+    >
+      <div class="flex gap-2" data-ai-row>
+        <span class="shrink-0 text-signal" aria-hidden="true">AI:</span>
+        <p class="min-w-0 flex-1 whitespace-pre-wrap break-words text-ink-muted" data-ai-greeting>{greeting}</p>
+      </div>
+    </div>
+
+    <p
+      id="ai-status"
+      class="hidden items-center gap-1 font-mono text-[0.6875rem] text-signal-bright"
+      aria-hidden="true"
+    >
+      <span id="ai-status-label">Gill AI is thinking</span>
+      <span class="inline-flex" aria-hidden="true">
+        <span class="ai-thinking-dot motion-safe:animate-pulse">.</span>
+        <span class="ai-thinking-dot motion-safe:animate-pulse" style="animation-delay: 150ms;">.</span>
+        <span class="ai-thinking-dot motion-safe:animate-pulse" style="animation-delay: 300ms;">.</span>
+      </span>
+    </p>
+
+    <div class="flex flex-wrap gap-2" id="ai-quick-questions">
+      {
+        quickQuestions.map((question) => (
+          <button
+            type="button"
+            data-question={question}
+            class="rounded-sm border border-border-subtle px-2.5 py-1 text-left font-mono text-[0.6875rem] text-ink-muted transition-[color,border-color,transform] duration-200 hover:border-signal-dim hover:text-signal-bright motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0 motion-safe:active:scale-[0.96]"
+          >
+            {question}
+          </button>
+        ))
+      }
+    </div>
+
+    <form id="ai-form" class="flex items-end gap-2" autocomplete="off">
+      <label for="ai-input" class="sr-only">Ask something about Gill</label>
+      <span class="shrink-0 pb-1.5 text-signal" aria-hidden="true">→</span>
+      <textarea
+        id="ai-input"
+        name="question"
+        rows="1"
+        maxlength="300"
+        class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-1.5 font-mono text-sm text-ink placeholder:text-ink-faint"
+        placeholder="Ask something about Gill… (Shift+Enter for a new line)"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+      ></textarea>
+      <button
+        type="submit"
+        id="ai-send"
+        class="shrink-0 rounded-sm border border-border-strong px-3 py-1.5 font-mono text-xs text-ink transition-[color,border-color,transform] duration-200 hover:border-signal-dim hover:text-signal-bright motion-safe:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+      >
+        Send
+      </button>
+    </form>
+
+    <p class="font-mono text-[0.6875rem] text-ink-faint">
+      Answers come from the verified information on this portfolio — nothing invented.
+    </p>
+  </div>
+</TerminalWindow>
+
+<script>
+  import { sendChatMessage } from "@/lib/aiEngine";
+  import { detectLanguage } from "@/lib/lang";
+  import type { ChatMessage } from "@/types";
+
+  const output = document.getElementById("ai-output");
+  const status = document.getElementById("ai-status");
+  const statusLabel = document.getElementById("ai-status-label");
+  const form = document.getElementById("ai-form") as HTMLFormElement | null;
+  const input = document.getElementById("ai-input") as HTMLTextAreaElement | null;
+  const sendButton = document.getElementById("ai-send") as HTMLButtonElement | null;
+  const clearButton = document.getElementById("ai-clear") as HTMLButtonElement | null;
+  const quickButtons = document.querySelectorAll<HTMLButtonElement>("#ai-quick-questions button");
+  const greetingEl = document.querySelector<HTMLParagraphElement>("[data-ai-greeting]");
+  const GREETING_TEXT = greetingEl?.textContent ?? "";
+
+  const prefersReducedMotion =
+    typeof window !== "undefined" && "matchMedia" in window
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false;
+
+  if (output && form && input && sendButton && clearButton) {
+    // In-memory only, scoped to this component instance / browser tab
+    // — no database, nothing persisted anywhere else. Reset on reload
+    // or on "Clear", same as the terminal's command history in
+    // Phase 08. `history` is what actually gets sent to `/api/chat`
+    // on every request, per the real-backend upgrade — the server is
+    // stateless, so the full conversation travels with each turn.
+    let history: ChatMessage[] = [];
+    let lang: "en" | "id" | undefined;
+    let busy = false;
+    let lastFailedQuestion: string | null = null;
+
+    function statusText(lang: "en" | "id" | undefined) {
+      return lang === "id" ? "Gill AI sedang berpikir" : "Gill AI is thinking";
+    }
+
+    function fallbackText(lang: "en" | "id" | undefined) {
+      return lang === "id"
+        ? "Gill AI lagi mengalami gangguan. Coba lagi beberapa saat."
+        : "Gill AI is currently unavailable. You can still explore the portfolio manually through the sections above.";
+    }
+
+    function retryLabel(lang: "en" | "id" | undefined) {
+      return lang === "id" ? "Coba lagi" : "Retry";
+    }
+
+    // Auto-grow the textarea up to a small cap so a multi-line
+    // question never pushes the rest of the widget off-screen.
+    function autoResize() {
+      input!.style.height = "auto";
+      input!.style.height = `${Math.min(input!.scrollHeight, 120)}px`;
+    }
+    input.addEventListener("input", autoResize);
+    autoResize();
+
+    /**
+     * Appends one message row. When `animate` is true and the visitor
+     * hasn't asked for reduced motion, the AI's text is revealed
+     * progressively (word by word) to read like a streaming response
+     * — this project has no real streaming API to consume (see
+     * `src/lib/aiEngine.ts`'s architecture note), so this is a purely
+     * cosmetic client-side reveal over an already-complete answer,
+     * never a delay on when the real answer is ready.
+     */
+    function appendMessage(role: "user" | "ai", text: string, animate = false): void {
+      const row = document.createElement("div");
+      row.className = "flex gap-2 motion-safe:animate-fade-up";
+
+      const label = document.createElement("span");
+      label.className = role === "ai" ? "shrink-0 text-signal" : "shrink-0 text-ink-faint";
+      label.setAttribute("aria-hidden", "true");
+      label.textContent = role === "ai" ? "AI:" : "YOU:";
+      row.appendChild(label);
+
+      const bubble = document.createElement("p");
+      bubble.className =
+        "min-w-0 flex-1 whitespace-pre-wrap break-words " + (role === "ai" ? "text-ink-muted" : "text-ink");
+      row.appendChild(bubble);
+      output!.appendChild(row);
+
+      // Every line is inserted via textContent/createTextNode only —
+      // never innerHTML — so neither typed input nor AI output can
+      // ever be interpreted as markup. Line breaks are real <br>
+      // elements, not raw HTML in a string.
+      function writeLinesInstantly(target: HTMLElement, value: string) {
+        const lines = value.split("\n");
+        lines.forEach((line, i) => {
+          if (i > 0) target.appendChild(document.createElement("br"));
+          target.appendChild(document.createTextNode(line));
+        });
+      }
+
+      if (!animate || prefersReducedMotion) {
+        writeLinesInstantly(bubble, text);
+        output!.scrollTop = output!.scrollHeight;
+        return;
+      }
+
+      // Progressive word-by-word reveal with a small blinking caret,
+      // capped at a short interval so it never reads as an artificial
+      // multi-second delay (PROMPT 15 section 7: "don't wait for the
+      // full response if streaming is available" — here, everything
+      // is already available locally, so the reveal itself is kept
+      // fast).
+      const words = text.split(/(\s+)/); // keep whitespace tokens so spacing is preserved
+      const caret = document.createElement("span");
+      caret.className = "ai-caret motion-safe:animate-pulse";
+      caret.textContent = "▍";
+      caret.setAttribute("aria-hidden", "true");
+      bubble.appendChild(caret);
+
+      let i = 0;
+      const revealed: string[] = [];
+      function step() {
+        if (i >= words.length) {
+          caret.remove();
+          output!.scrollTop = output!.scrollHeight;
+          return;
+        }
+        revealed.push(words[i]);
+        i += 1;
+        bubble.textContent = "";
+        writeLinesInstantly(bubble, revealed.join(""));
+        bubble.appendChild(caret);
+        output!.scrollTop = output!.scrollHeight;
+        window.setTimeout(step, 14);
+      }
+      step();
+    }
+
+    function appendErrorWithRetry(question: string, lang: "en" | "id" | undefined) {
+      appendMessage("ai", fallbackText(lang));
+      lastFailedQuestion = question;
+
+      const retryRow = document.createElement("div");
+      retryRow.className = "flex gap-2 motion-safe:animate-fade-up";
+      const spacer = document.createElement("span");
+      spacer.className = "shrink-0 text-signal";
+      spacer.setAttribute("aria-hidden", "true");
+      spacer.textContent = "";
+      retryRow.appendChild(spacer);
+
+      const retryButton = document.createElement("button");
+      retryButton.type = "button";
+      retryButton.textContent = retryLabel(lang);
+      retryButton.className =
+        "rounded-sm border border-border-subtle px-2.5 py-1 font-mono text-[0.6875rem] text-signal-bright transition-colors duration-200 hover:border-signal-dim";
+      retryButton.addEventListener("click", () => {
+        retryRow.remove();
+        if (lastFailedQuestion) void handleAsk(lastFailedQuestion);
+      });
+      retryRow.appendChild(retryButton);
+      output!.appendChild(retryRow);
+      output!.scrollTop = output!.scrollHeight;
+    }
+
+    function setBusy(value: boolean, currentLang?: "en" | "id") {
+      busy = value;
+      sendButton!.disabled = value;
+      input!.disabled = value;
+      if (statusLabel) statusLabel.textContent = statusText(currentLang ?? lang);
+      status?.classList.toggle("hidden", !value);
+      status?.classList.toggle("flex", value);
+    }
+
+    // A real network call (see `src/lib/aiEngine.ts` → `POST
+    // /api/chat`) can itself resolve quickly on a fast connection,
+    // which would make the "thinking" state above flash by too fast
+    // to register as an animation at all. A short, fixed minimum
+    // keeps it visibly smooth without ever padding out a genuinely
+    // slow response any further — see PROMPT 15 section 6, "avoid a
+    // long blank delay" / "must feel smooth".
+    const MIN_THINKING_MS = 380;
+
+    // Bounds how much history is kept client-side/sent per request —
+    // the server independently enforces its own cap too (defense in
+    // depth), this just keeps the payload small during a long session.
+    const MAX_HISTORY_MESSAGES = 40;
+
+    async function handleAsk(raw: string) {
+      const trimmed = raw.trim();
+      if (!trimmed || busy) return;
+
+      lang = detectLanguage(trimmed, lang);
+      appendMessage("user", trimmed);
+      history.push({ role: "user", content: trimmed });
+      if (history.length > MAX_HISTORY_MESSAGES) history = history.slice(-MAX_HISTORY_MESSAGES);
+      setBusy(true, lang);
+      const startedAt = performance.now();
+
+      try {
+        const result = await sendChatMessage(history);
+        if (!prefersReducedMotion) {
+          const elapsed = performance.now() - startedAt;
+          const remaining = MIN_THINKING_MS - elapsed;
+          if (remaining > 0) await new Promise((resolve) => window.setTimeout(resolve, remaining));
+        }
+        lang = result.lang ?? lang;
+        history.push({ role: "assistant", content: result.text });
+        appendMessage("ai", result.text, true);
+      } catch {
+        // Covers any failure from `/api/chat` — network error,
+        // timeout, non-2xx status, or a malformed body. Never surface
+        // a raw error message, stack trace, or status code here. The
+        // user turn is popped back off `history` (the visible chat
+        // row stays — only the network-context array is rolled back)
+        // so a retry re-pushes it fresh instead of sending two
+        // consecutive "user" turns in a row, which a real provider's
+        // strict user/assistant alternation would reject.
+        if (history[history.length - 1]?.role === "user") history.pop();
+        appendErrorWithRetry(trimmed, lang);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = input.value;
+      input.value = "";
+      autoResize();
+      void handleAsk(value);
+    });
+
+    // Enter → send. Shift+Enter → newline. A textarea doesn't submit
+    // its form on its own, so Enter is handled explicitly here; Shift+Enter
+    // is left alone so the browser's default newline behavior applies.
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        if (!busy) form!.requestSubmit();
+      }
+    });
+
+    quickButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const question = button.dataset.question ?? "";
+        input.value = "";
+        autoResize();
+        void handleAsk(question);
+      });
+    });
+
+    clearButton.addEventListener("click", () => {
+      if (busy) return;
+      history = [];
+      lang = undefined;
+      lastFailedQuestion = null;
+      output.innerHTML = "";
+      const row = document.createElement("div");
+      row.className = "flex gap-2";
+      const label = document.createElement("span");
+      label.className = "shrink-0 text-signal";
+      label.setAttribute("aria-hidden", "true");
+      label.textContent = "AI:";
+      row.appendChild(label);
+      const bubble = document.createElement("p");
+      bubble.className = "min-w-0 flex-1 whitespace-pre-wrap break-words text-ink-muted";
+      bubble.textContent = GREETING_TEXT;
+      row.appendChild(bubble);
+      output.appendChild(row);
+      input.focus();
+    });
+  }
+</script>

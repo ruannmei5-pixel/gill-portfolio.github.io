@@ -1,0 +1,29 @@
+---
+export interface Props {
+  title?: string;
+  class?: string;
+}
+
+const { title = "gill@tjkt", class: className = "" } = Astro.props;
+---
+
+<div
+  class={`group overflow-hidden rounded-md border border-border-subtle bg-void-raised shadow-panel transition-shadow duration-250 hover:border-signal-dim hover:shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_12px_32px_-16px_rgba(0,0,0,0.6),0_0_32px_-8px_var(--color-signal-glow)] ${className}`}
+>
+  <div
+    class="flex items-center gap-2 border-b border-border-subtle bg-surface px-4 py-2.5"
+  >
+    <span class="flex gap-1.5" aria-hidden="true">
+      <span class="h-2.5 w-2.5 rounded-full bg-border-strong"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-border-strong"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-border-strong"></span>
+    </span>
+    <span class="ml-1 font-mono text-xs text-ink-faint">{title}</span>
+    <span class="ml-auto flex items-center gap-1.5" aria-hidden="true">
+      <span class="h-1.5 w-1.5 rounded-full bg-signal motion-safe:animate-pulse"></span>
+    </span>
+  </div>
+  <div class="p-5 font-mono text-sm leading-relaxed">
+    <slot />
+  </div>
+</div>

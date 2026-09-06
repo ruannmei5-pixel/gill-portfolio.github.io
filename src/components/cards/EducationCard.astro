@@ -1,0 +1,56 @@
+---
+import type { EducationEntry } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import { hoverCardGlow } from "@/lib/ui";
+
+export interface Props {
+  entry: EducationEntry;
+}
+
+const { entry } = Astro.props;
+---
+
+<Card as="article" class={`group relative ${hoverCardGlow}`}>
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-wide text-ink-faint">
+        {entry.shortName ?? entry.program}
+      </p>
+      <h3 class="mt-1 font-display text-xl text-ink">{entry.institution}</h3>
+      <p class="mt-1 text-sm text-ink-muted">{entry.program}</p>
+    </div>
+    {entry.current ? <Badge tone="signal">In progress</Badge> : null}
+  </div>
+
+  <p class="mt-3 font-mono text-xs text-ink-faint">{entry.period}</p>
+
+  <p class="mt-3 text-sm text-ink-muted">{entry.description}</p>
+
+  <!-- Small technical-metadata readout — a clean information panel,
+       not a simulated terminal (see PROJECT_CONTEXT.md Phase 06). -->
+  <dl class="mt-5 grid grid-cols-3 gap-4 border-t border-border-subtle pt-4">
+    {
+      entry.shortName ? (
+        <div>
+          <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">field</dt>
+          <dd class="mt-1 font-mono text-xs text-ink">{entry.shortName}</dd>
+        </div>
+      ) : null
+    }
+    {
+      entry.direction ? (
+        <div>
+          <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">direction</dt>
+          <dd class="mt-1 font-mono text-xs text-ink">{entry.direction}</dd>
+        </div>
+      ) : null
+    }
+    <div>
+      <dt class="font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">status</dt>
+      <dd class="mt-1 font-mono text-xs text-signal-bright">
+        {entry.current ? "In progress" : "Complete"}
+      </dd>
+    </div>
+  </dl>
+</Card>

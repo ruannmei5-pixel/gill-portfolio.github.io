@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Placeholder OG/share image. Swap for a finished version before
+       launch (see the ogImage TODO in src/layouts/BaseLayout.astro). -->
+  <rect width="1200" height="630" fill="#0A0B0D" />
+
+  <!-- faint contour backdrop, echoing .contour-backdrop in global.css -->
+  <g stroke="#1A1E24" stroke-width="1">
+    <line x1="0" y1="120" x2="1200" y2="120" />
+    <line x1="0" y1="200" x2="1200" y2="200" />
+    <line x1="0" y1="280" x2="1200" y2="280" />
+    <line x1="0" y1="360" x2="1200" y2="360" />
+    <line x1="0" y1="440" x2="1200" y2="440" />
+    <line x1="0" y1="520" x2="1200" y2="520" />
+  </g>
+
+  <!-- ascending marker line, an abstraction of the elevation rail -->
+  <polyline
+    points="90,470 340,430 560,360 800,270 1000,150"
+    fill="none"
+    stroke="#35726B"
+    stroke-width="2"
+  />
+  <circle cx="1000" cy="150" r="6" fill="#4FA39A" />
+
+  <text
+    x="90"
+    y="330"
+    font-family="'Space Grotesk', 'Segoe UI', sans-serif"
+    font-size="88"
+    font-weight="600"
+    fill="#E8EAED"
+  >GILL</text>
+
+  <text
+    x="90"
+    y="380"
+    font-family="'Space Grotesk', 'Segoe UI', sans-serif"
+    font-size="34"
+    font-weight="500"
+    fill="#4FA39A"
+  >From minus to peak</text>
+
+  <text
+    x="90"
+    y="440"
+    font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, monospace"
+    font-size="20"
+    fill="#9AA2AD"
+  >TJKT Student · Web Development · Linux · Networking · AI</text>
+</svg>

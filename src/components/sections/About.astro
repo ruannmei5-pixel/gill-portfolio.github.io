@@ -1,0 +1,38 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import { profile } from "@data/profile";
+import { education } from "@data/education";
+---
+
+<SectionShell id="about">
+  <SectionHeader index="01" title="About" />
+
+  <div class="grid gap-10 lg:grid-cols-[1fr_320px] lg:gap-16">
+    <div class="max-w-prose space-y-4 text-ink-muted">
+      <p>
+        {profile.fullName}, known as <span class="text-ink">{profile.nickname}</span>, is a{" "}
+        {profile.role.toLowerCase()}. The path here was not a straight line — it started
+        in the sciences, took a detour that wasn't the original plan, and only later
+        turned into genuine interest.
+      </p>
+      <p>
+        That interest grew through hands-on learning, self-reflection, taking on
+        leadership roles, entering competitions, and building real projects — not from
+        having it all figured out on day one.
+      </p>
+    </div>
+
+    <aside class="space-y-4">
+      {
+        education.map((entry) => (
+          <div class="border-l border-border-subtle pl-4">
+            <p class="font-mono text-xs text-ink-faint">{entry.period}</p>
+            <p class="mt-1 text-sm text-ink">{entry.program}</p>
+            <p class="text-xs text-ink-faint">{entry.institution}</p>
+          </div>
+        ))
+      }
+    </aside>
+  </div>
+</SectionShell>

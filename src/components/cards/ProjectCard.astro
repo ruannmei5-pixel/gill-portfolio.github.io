@@ -1,0 +1,86 @@
+---
+import type { Project, ProjectStatus } from "@/types";
+import Card from "@components/ui/Card.astro";
+import Badge from "@components/ui/Badge.astro";
+import TechTag from "@components/ui/TechTag.astro";
+import ArchitectureFlow from "@components/cards/ArchitectureFlow.astro";
+import { hoverCardGlow, hoverTechTag } from "@/lib/ui";
+
+export interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+/**
+ * Each status renders as one or two small badges rather than a single
+ * label — "complete-not-deployed" is deliberately two honest lines
+ * (Complete / Not deployed), never collapsed into something that
+ * could read as "live".
+ */
+const statusBadges: Record<ProjectStatus, { label: string; tone: "signal" | "neutral" }[]> = {
+  prototype: [{ label: "Prototype", tone: "neutral" }],
+  "complete-not-deployed": [
+    { label: "Complete", tone: "signal" },
+    { label: "Not deployed", tone: "neutral" },
+  ],
+  "in-progress": [{ label: "In progress", tone: "signal" }],
+  shipped: [{ label: "Shipped", tone: "signal" }],
+  archived: [{ label: "Archived", tone: "neutral" }],
+};
+---
+
+<Card as="article" class={`group flex h-full flex-col ${hoverCardGlow}`}>
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <h3 class="font-display text-lg text-ink">{project.title}</h3>
+      <p class="mt-1 font-mono text-xs text-ink-faint">{project.category}</p>
+    </div>
+    <div class="flex shrink-0 flex-col items-end gap-1.5">
+      {statusBadges[project.status].map((badge) => <Badge tone={badge.tone}>{badge.label}</Badge>)}
+    </div>
+  </div>
+
+  <p class="mt-4 text-ink-muted">{project.summary}</p>
+
+  {
+    project.contribution ? (
+      <div class="mt-4 rounded-sm border border-signal-dim bg-signal-wash px-3 py-2.5">
+        <p class="font-mono text-[0.6875rem] uppercase tracking-wide text-signal-bright">My contribution</p>
+        <p class="mt-1 text-sm text-ink-muted">{project.contribution}</p>
+      </div>
+    ) : null
+  }
+
+  <div class="mt-4 flex flex-wrap gap-2">
+    {project.technologies.map((tech) => <TechTag class={hoverTechTag}>{tech}</TechTag>)}
+  </div>
+
+  {
+    project.architecture && project.architecture.length > 0 ? (
+      <ArchitectureFlow
+        steps={project.architecture}
+        direction="horizontal"
+        label="Core concept"
+        class="mt-5 border-t border-border-subtle pt-4"
+      />
+    ) : null
+  }
+
+  {
+    project.links && (project.links.repo || project.links.live) ? (
+      <div class="mt-5 flex gap-4 text-sm">
+        {project.links.live ? (
+          <a href={project.links.live} class="text-signal-bright hover:underline">
+            View project
+          </a>
+        ) : null}
+        {project.links.repo ? (
+          <a href={project.links.repo} class="text-signal-bright hover:underline">
+            Source
+          </a>
+        ) : null}
+      </div>
+    ) : null
+  }
+</Card>

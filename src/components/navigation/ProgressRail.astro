@@ -1,0 +1,44 @@
+---
+// A quiet vertical rail pinned to the viewport edge. It fills as the
+// page is scrolled — the ascent metaphor rendered as instrumentation
+// (an altimeter reading) rather than a literal mountain graphic.
+// Hidden on small screens where the space is needed for content.
+---
+
+<div
+  class="pointer-events-none fixed inset-y-0 left-0 z-40 hidden w-px bg-border-subtle lg:block"
+  aria-hidden="true"
+>
+  <div
+    id="progress-rail-fill"
+    class="w-px bg-signal transition-[height] duration-150 ease-out"
+    style="height: 0%"
+  >
+  </div>
+</div>
+
+<script>
+  const fill = document.getElementById("progress-rail-fill");
+  if (fill) {
+    let ticking = false;
+    const update = () => {
+      const scrollTop = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max > 0 ? Math.min(100, Math.max(0, (scrollTop / max) * 100)) : 0;
+      fill.style.height = `${pct}%`;
+      ticking = false;
+    };
+    update();
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          window.requestAnimationFrame(update);
+          ticking = true;
+        }
+      },
+      { passive: true },
+    );
+    window.addEventListener("resize", update);
+  }
+</script>

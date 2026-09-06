@@ -1,0 +1,57 @@
+---
+export interface Props {
+  steps: string[];
+  /** "vertical" (default) for a system-overview stack, "horizontal" for a short logic flow. */
+  direction?: "vertical" | "horizontal";
+  /** Small mono label above the flow, e.g. "SYSTEM OVERVIEW" or "CORE CONCEPT". */
+  label?: string;
+  /** Optional caveat line under the flow — omit for a simple, literal logic flow that needs no disclaimer. */
+  note?: string;
+  class?: string;
+}
+
+const { steps, direction = "vertical", label, note, class: className = "" } = Astro.props;
+const isHorizontal = direction === "horizontal";
+---
+
+<div class={className}>
+  {
+    label ? (
+      <p class="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint">{label}</p>
+    ) : null
+  }
+  <ol
+    class:list={[
+      "mt-3 flex gap-2",
+      isHorizontal
+        ? "flex-row flex-wrap items-center"
+        : "flex-col items-start",
+    ]}
+  >
+    {
+      steps.map((step, i) => (
+        <li class:list={["flex items-center gap-2", isHorizontal ? "" : "flex-col items-start"]}>
+          <span class="rounded-sm border border-border-subtle bg-surface px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-wide text-ink-muted">
+            {step}
+          </span>
+          {i < steps.length - 1 ? (
+            <span
+              class:list={[
+                "text-ink-faint",
+                isHorizontal ? "" : "pl-3",
+              ]}
+              aria-hidden="true"
+            >
+              {isHorizontal ? "→" : "↓"}
+            </span>
+          ) : null}
+        </li>
+      ))
+    }
+  </ol>
+  {
+    note ? (
+      <p class="mt-2 font-mono text-[0.625rem] text-ink-faint">{note}</p>
+    ) : null
+  }
+</div>

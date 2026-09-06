@@ -1,0 +1,53 @@
+---
+import Container from "@components/layout/Container.astro";
+import { profile } from "@data/profile";
+
+const year = new Date().getFullYear();
+
+/**
+ * Phase 10: mirrors the same "is this a real link or a Phase 01 TODO
+ * placeholder" check already established in `src/data/terminal.ts`
+ * and `src/data/aiKnowledge.ts` — kept as a small local copy for the
+ * same reason those two document (avoids coupling this component to
+ * either data module for one predicate). Before this fix the footer
+ * rendered `profile.socials`' placeholder `href="#"` / `example.com`
+ * entries verbatim, which is a broken link (jumps to top of page) and
+ * a fake email address for anyone who actually clicked it.
+ */
+function isRealSocial(href: string): boolean {
+  if (!href) return false;
+  if (href === "#") return false;
+  if (href.includes("example.com")) return false;
+  return true;
+}
+
+const realSocials = profile.socials.filter((social) => isRealSocial(social.href));
+---
+
+<footer class="border-t border-border-subtle py-10">
+  <Container class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="font-mono text-sm text-ink-faint">
+      <p>
+        <span class="text-ink-muted">{profile.fullName}</span>
+        <span aria-hidden="true"> / </span>
+        <span class="text-signal-bright">{profile.nickname}</span>
+        <span class="text-ink-faint"> · {year}</span>
+      </p>
+      <p class="mt-1 text-xs uppercase tracking-[0.1em]">{profile.tagline}</p>
+    </div>
+    {
+      realSocials.length > 0 ? (
+        <div class="flex flex-wrap gap-4 text-sm text-ink-faint">
+          {realSocials.map((social) => (
+            <a
+              href={social.href}
+              class="transition-colors duration-250 hover:text-signal-bright"
+            >
+              {social.label}
+            </a>
+          ))}
+        </div>
+      ) : null
+    }
+  </Container>
+</footer>

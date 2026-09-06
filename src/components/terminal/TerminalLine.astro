@@ -1,0 +1,23 @@
+---
+export interface Props {
+  prompt?: string;
+  delay?: number; // ms, staggers the reveal animation
+  emphasis?: boolean; // use full-intensity ink instead of muted text
+  class?: string;
+}
+
+const { prompt = "$", delay = 0, emphasis = false, class: className = "" } = Astro.props;
+---
+
+<div class={`flex gap-2 whitespace-pre-wrap ${className}`}>
+  {prompt ? <span class="shrink-0 text-signal" aria-hidden="true">{prompt}</span> : null}
+  <span
+    class:list={[
+      "inline-block overflow-hidden motion-safe:animate-reveal",
+      emphasis ? "text-ink" : "text-ink-muted",
+    ]}
+    style={`animation-delay:${delay}ms`}
+  >
+    <slot />
+  </span>
+</div>

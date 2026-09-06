@@ -1,0 +1,54 @@
+---
+import SectionShell from "@components/layout/SectionShell.astro";
+import SectionHeader from "@components/ui/SectionHeader.astro";
+import EducationCard from "@components/cards/EducationCard.astro";
+import Badge from "@components/ui/Badge.astro";
+import { education, educationStory, pklOpportunity } from "@data/education";
+
+const currentEducation = education.find((entry) => entry.current);
+const priorEducation = education.filter((entry) => !entry.current);
+---
+
+<SectionShell id="education">
+  <SectionHeader
+    index="03"
+    eyebrow="Education"
+    title="Where I'm learning"
+    description="The formal side of the same journey — where the technical direction is currently being built."
+  />
+
+  <div class="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
+    <div class="space-y-6">
+      {currentEducation ? <EducationCard entry={currentEducation} /> : null}
+
+      <p class="max-w-prose border-l-2 border-signal-dim pl-4 text-sm text-ink-muted">
+        {educationStory.story}
+      </p>
+
+      {
+        priorEducation.length > 0 ? (
+          <div class="flex flex-wrap gap-3">
+            {priorEducation.map((entry) => (
+              <span class="rounded-sm border border-dashed border-border-subtle px-3 py-2 font-mono text-xs text-ink-faint">
+                {entry.program} · {entry.period}
+              </span>
+            ))}
+          </div>
+        ) : null
+      }
+    </div>
+
+    <!-- PKL status — kept visually distinct (dashed border, neutral
+         badge) so it never reads as completed or confirmed work
+         experience. See PROJECT_CONTEXT.md: Gill has not completed a
+         PKL/internship. -->
+    <div class="rounded-md border border-dashed border-border-subtle bg-void-raised/60 p-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <p class="font-mono text-xs uppercase tracking-wide text-ink-faint">{pklOpportunity.label}</p>
+        <Badge tone="neutral">Not started</Badge>
+      </div>
+      <h3 class="mt-3 font-display text-lg text-ink">{pklOpportunity.organization}</h3>
+      <p class="mt-3 text-sm text-ink-muted">{pklOpportunity.description}</p>
+    </div>
+  </div>
+</SectionShell>

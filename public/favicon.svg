@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0A0B0D" />
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#262B33" />
+  <text
+    x="16"
+    y="22"
+    text-anchor="middle"
+    font-family="'JetBrains Mono', 'SFMono-Regular', Consolas, monospace"
+    font-size="17"
+    font-weight="600"
+    fill="#4FA39A"
+  >G</text>
+</svg>

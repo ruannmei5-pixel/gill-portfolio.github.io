@@ -1,0 +1,21 @@
+---
+import Container from "@components/layout/Container.astro";
+
+export interface Props {
+  id: string;
+  backdrop?: boolean;
+  class?: string;
+}
+
+const { id, backdrop = false, class: className = "" } = Astro.props;
+---
+
+<section
+  id={id}
+  class={`relative scroll-mt-20 border-t border-border-subtle py-20 md:py-28 ${className}`}
+>
+  {backdrop ? <div class="contour-backdrop pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" /> : null}
+  <Container class="relative" data-reveal>
+    <slot />
+  </Container>
+</section>

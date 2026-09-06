@@ -1,0 +1,73 @@
+---
+import Container from "@components/layout/Container.astro";
+import Button from "@components/ui/Button.astro";
+import StatusIndicator from "@components/ui/StatusIndicator.astro";
+import HeroTerminal from "@components/hero/HeroTerminal.astro";
+import AvatarElevation from "@components/hero/AvatarElevation.astro";
+import { profile } from "@data/profile";
+---
+
+<section id="top" class="relative overflow-hidden pb-20 pt-16 md:pb-28 md:pt-24">
+  <div class="contour-backdrop pointer-events-none absolute inset-0 opacity-30" aria-hidden="true"></div>
+
+  <Container class="relative grid gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-10">
+    <div>
+      <StatusIndicator
+        label="elevation --check: still climbing"
+        class="mb-6 motion-safe:animate-fade-up"
+        style="animation-delay: 0ms"
+      />
+
+      <h1
+        class="font-display text-display-xl leading-[0.95] text-ink motion-safe:animate-fade-up"
+        style="animation-delay: 60ms"
+      >
+        {profile.fullName}
+      </h1>
+      <p
+        class="mt-2 font-display text-display-md text-signal-bright motion-safe:animate-fade-up"
+        style="animation-delay: 120ms"
+      >
+        {profile.nickname}
+      </p>
+
+      <p
+        class="mt-7 border-l-2 border-signal pl-4 font-display text-2xl uppercase tracking-[0.04em] text-ink md:text-3xl motion-safe:animate-fade-up"
+        style="animation-delay: 180ms"
+      >
+        {profile.tagline}
+      </p>
+
+      <p
+        class="mt-4 max-w-md pl-[1.125rem] font-mono text-sm leading-relaxed text-ink-muted motion-safe:animate-fade-up"
+        style="animation-delay: 240ms"
+      >
+        {profile.philosophy.map((line) => (
+          <>
+            <span class="text-signal-dim">// </span>{line}<br />
+          </>
+        ))}
+      </p>
+
+      <p class="mt-7 text-ink-muted motion-safe:animate-fade-up" style="animation-delay: 280ms">
+        {profile.status} · Technology enthusiast
+      </p>
+      <p class="mt-1 font-mono text-xs text-ink-faint motion-safe:animate-fade-up" style="animation-delay: 300ms">
+        {profile.focusAreas.join(" · ")}
+      </p>
+
+      <div class="mt-10 flex flex-wrap gap-4 motion-safe:animate-fade-up" style="animation-delay: 340ms">
+        <Button href="#journey" variant="primary">Begin my journey</Button>
+        <Button href="#ai" variant="secondary">Ask Gill AI</Button>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-col items-start gap-4 lg:items-end motion-safe:animate-fade-up"
+      style="animation-delay: 180ms"
+    >
+      <HeroTerminal />
+      <AvatarElevation />
+    </div>
+  </Container>
+</section>
