@@ -18,7 +18,7 @@ export const profile: Profile = {
     "I choose how far I go.",
   ],
   focusAreas: ["Web Development", "Linux", "Networking", "AI"],
-  avatarPlaceholder: "/images/avatar-placeholder.svg",
+  avatarPlaceholder: "/images/avatar.jpg",
   socials: [
     // TODO: fill in real profiles before launch
     { label: "GitHub", href: "#" },

@@ -1,20 +1,18 @@
 ---
-// Pairs the avatar with the "minus → climbing → peak" metaphor,
-// rendered as a small coordinate-plot rather than any literal
-// mountain/hiking imagery — consistent with the instrumentation
-// language used elsewhere (ProgressRail, contour-backdrop).
-//
-// The avatar comes from `profile.avatarPlaceholder`. Swapping in a
-// real photo later only means replacing that file (or updating the
-// path in `src/data/profile.ts`) — no markup change needed here.
+// Avatar + elevation trace. Foto bisa diklik untuk diperbesar
+// (lightbox memakai <dialog> native: Esc menutup, fokus terkunci di dalam).
 import { profile } from "@data/profile";
 ---
 
 <div
   class="group mt-4 flex w-full max-w-md items-center gap-4 rounded-md border border-border-subtle bg-void-raised/60 p-4 shadow-panel transition-colors duration-250 hover:border-signal-dim"
 >
-  <div
-    class="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border border-border-subtle transition-shadow duration-250 group-hover:shadow-[0_0_0_1px_var(--color-signal-dim),0_0_24px_-4px_var(--color-signal-glow)]"
+  <button
+    type="button"
+    id="avatar-open"
+    aria-haspopup="dialog"
+    aria-label="Perbesar foto profil"
+    class="relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-md border border-border-subtle transition-shadow duration-250 group-hover:shadow-[0_0_0_1px_var(--color-signal-dim),0_0_24px_-4px_var(--color-signal-glow)]"
   >
     <img
       src={profile.avatarPlaceholder}
@@ -24,7 +22,7 @@ import { profile } from "@data/profile";
       height="56"
       loading="eager"
     />
-  </div>
+  </button>
 
   <div class="min-w-0 flex-1">
     <svg
@@ -33,48 +31,64 @@ import { profile } from "@data/profile";
       role="img"
       aria-label="Elevation trace from minus to peak: currently still climbing"
     >
-      <!-- zero baseline -->
-      <line
-        x1="0"
-        y1="34"
-        x2="168"
-        y2="34"
-        stroke="var(--color-border-subtle)"
-        stroke-width="1"
-        stroke-dasharray="2 3"
-      />
+      <line x1="0" y1="34" x2="168" y2="34" stroke="var(--color-border-subtle)" stroke-width="1" stroke-dasharray="2 3" />
       <text x="0" y="30" font-family="var(--font-mono)" font-size="6" fill="var(--color-ink-faint)">MIN</text>
       <text x="146" y="10" font-family="var(--font-mono)" font-size="6" fill="var(--color-ink-faint)">PEAK</text>
-
-      <!-- ascent line: dips first ("minus"), then climbs -->
-      <polyline
-        points="4,46 22,50 44,40 68,30 92,24 116,16 140,12"
-        fill="none"
-        stroke="var(--color-signal)"
-        stroke-width="1.75"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <!-- faint dashed continuation toward the (unreached) peak -->
-      <polyline
-        points="140,12 168,4"
-        fill="none"
-        stroke="var(--color-signal-dim)"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-dasharray="2 3"
-      />
-
-      <!-- current-position marker -->
-      <circle
-        cx="140"
-        cy="12"
-        r="5"
-        fill="var(--color-signal-glow)"
-        class="motion-safe:animate-pulse-ring"
-        style="transform-origin: 140px 12px;"
-      />
+      <polyline points="4,46 22,50 44,40 68,30 92,24 116,16 140,12" fill="none" stroke="var(--color-signal)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="140,12 168,4" fill="none" stroke="var(--color-signal-dim)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 3" />
+      <circle cx="140" cy="12" r="5" fill="var(--color-signal-glow)" class="motion-safe:animate-pulse-ring" style="transform-origin: 140px 12px;" />
       <circle cx="140" cy="12" r="2.5" fill="var(--color-signal-bright)" />
     </svg>
   </div>
 </div>
+
+<dialog
+  id="avatar-dialog"
+  aria-label="Foto profil diperbesar"
+  class="m-auto max-h-[90vh] max-w-[90vw] overflow-visible border-0 bg-transparent p-0 backdrop:bg-[rgba(10,11,13,0.88)] backdrop:backdrop-blur-sm"
+>
+  <div class="relative">
+    <img
+      src={profile.avatarPlaceholder}
+      alt={`${profile.fullName}, ${profile.nickname}`}
+      class="max-h-[85vh] max-w-[90vw] rounded-md border border-border-subtle object-contain shadow-panel"
+      loading="lazy"
+    />
+    <button
+      type="button"
+      id="avatar-close"
+      aria-label="Tutup foto"
+      class="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded border border-border-strong bg-void/80 font-mono text-sm text-ink transition-colors duration-250 hover:border-signal-dim hover:text-signal-bright"
+      style="background-color: rgba(10, 11, 13, 0.8);"
+    >
+      ✕
+    </button>
+  </div>
+</dialog>
+
+<script>
+  const openBtn = document.getElementById("avatar-open");
+  const closeBtn = document.getElementById("avatar-close");
+  const dialog = document.getElementById("avatar-dialog") as HTMLDialogElement | null;
+
+  if (openBtn && closeBtn && dialog) {
+    openBtn.addEventListener("click", () => {
+      dialog.showModal();
+      document.body.style.overflow = "hidden";
+    });
+
+    const close = () => dialog.close();
+    closeBtn.addEventListener("click", close);
+
+    // Klik di area gelap (di luar foto) menutup dialog.
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) close();
+    });
+
+    // Dipanggil untuk semua cara menutup, termasuk tombol Esc.
+    dialog.addEventListener("close", () => {
+      document.body.style.overflow = "";
+      openBtn.focus();
+    });
+  }
+</script>
