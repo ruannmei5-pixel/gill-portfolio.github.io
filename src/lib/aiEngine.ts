@@ -35,6 +35,12 @@ const REQUEST_TIMEOUT_MS = 25_000;
  * "Gill AI is having trouble connecting" message with a Retry button;
  * this function never needs to know about that UI itself.
  */
+export class ChatRequestError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
 export async function sendChatMessage(messages: ChatMessage[]): Promise<AiAnswer> {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -55,7 +61,7 @@ export async function sendChatMessage(messages: ChatMessage[]): Promise<AiAnswer
     // The server never puts anything sensitive in this body (see
     // src/pages/api/chat.ts), but it's still not shown to the
     // visitor directly — only used here to decide to throw.
-    throw new Error(`Gill AI request failed with status ${response.status}`);
+    throw new ChatRequestError(response.status, `Gill AI request failed with status ${response.status}`);
   }
 
   let data: unknown;

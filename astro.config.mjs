@@ -4,7 +4,7 @@ import node from "@astrojs/node";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://gill.dev", // TODO: replace with the production domain
+  site: "https://vahleviataraxia.my.id", // TODO: replace with the production domain
   integrations: [
     tailwind({
       applyBaseStyles: false,

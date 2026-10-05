@@ -111,7 +111,7 @@ const suggestions = quickQuestions.slice(0, 4);
 </TerminalWindow>
 
 <script>
-  import { sendChatMessage } from "@/lib/aiEngine";
+  import { sendChatMessage, ChatRequestError } from "@/lib/aiEngine";
   import { detectLanguage } from "@/lib/lang";
   import type { ChatMessage } from "@/types";
 
@@ -285,13 +285,23 @@ const suggestions = quickQuestions.slice(0, 4);
         lang = result.lang ?? lang;
         history.push({ role: "assistant", content: result.text });
         appendMessage("ai", result.text, true);
-      } catch {
+      } catch (error) {
         if (history[history.length - 1]?.role === "user") history.pop();
-        appendErrorWithRetry(trimmed, lang);
+        if (error instanceof ChatRequestError && error.status === 429) {
+          appendMessage(
+            "ai",
+            lang === "id"
+              ? "Pertanyaannya sudah cukup banyak untuk sekarang. Coba lagi beberapa saat, atau lihat langsung bagian-bagian portofolio di atas."
+              : "That's a lot of questions for now. Please try again in a bit, or browse the portfolio sections above.",
+          );
+        } else {
+          appendErrorWithRetry(trimmed, lang);
+        }
       } finally {
         setBusy(false);
       }
     }
+    
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();

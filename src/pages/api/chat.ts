@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import type { AiConversationContext, ChatMessage } from "@/types";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { buildKnowledgeBaseText } from "@data/aiKnowledge";
 import { profile } from "@data/profile";
 import { detectLanguage } from "@/lib/lang";
@@ -245,7 +246,7 @@ async function callNvidia(messages: ChatMessage[], apiKey: string, model: string
   }
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (request.headers.get("content-type")?.includes("application/json") !== true) {
     return safeError("Expected application/json.", 415);
   }
@@ -296,6 +297,32 @@ export const POST: APIRoute = async ({ request }) => {
       const context = await deriveLocalContext(history.slice(0, -1));
       const result = await answerLocally(lastUser.content, context);
       return jsonResponse({ text: result.text, lang: result.lang ?? "en" }, 200);
+    }
+
+        // Rate limiting hanya berlaku untuk jalur yang memakai API berbayar/berkuota.
+    let ip = "unknown";
+    try {
+      ip = clientAddress;
+    } catch {
+      ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+    }
+
+    const limit = checkRateLimit(ip);
+    if (!limit.ok) {
+      if (limit.reason === "global") {
+        // Kuota harian habis: jawab lewat mesin lokal (gratis), bukan error.
+        const lastUser = history[history.length - 1];
+        const context = await deriveLocalContext(history.slice(0, -1));
+        const result = await answerLocally(lastUser.content, context);
+        return jsonResponse({ text: result.text, lang: result.lang ?? "en" }, 200);
+      }
+      return new Response(JSON.stringify({ error: "Too many requests." }), {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(limit.retryAfterSeconds),
+        },
+      });
     }
 
     // Anthropic's Messages API requires the array to start on a
