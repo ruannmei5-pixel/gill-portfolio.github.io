@@ -6,6 +6,7 @@ import { experienceEntries, experienceCategories } from "@data/experience";
 import { education, pklOpportunity } from "@data/education";
 import { achievements } from "@data/achievements";
 import type { Lang } from "@/lib/lang";
+import type { Achievement } from "@/types";
 
 /**
  * Gill AI — knowledge layer.
@@ -381,6 +382,56 @@ export function getAchievementRankFollowUp(lang: Lang = "en"): string {
     `For ${competition.title}${competition.subtitle ? ` (${competition.subtitle})` : ""}, the portfolio doesn't list a numbered placement — it's on file as national-level participation, not a specific ranking.`,
   ];
   if (medalList) lines.push(`The ones that do have a specific placement: ${medalList}.`);
+  return lines.join("\n");
+}
+
+/**
+ * Follow-up fix (conversation-context upgrade): "yang nasional?" /
+ * "yang mikrotik?" / "yang sertifikat?" style narrowing questions
+ * asked right after an achievements answer. Formats a caller-supplied
+ * *subset* of `achievements.ts` — see `ACHIEVEMENT_FILTERS` in
+ * `src/lib/localAiEngine.ts` for how that subset is picked from the
+ * follow-up text. Kept as a pure formatter here (no filtering logic)
+ * so it stays consistent with `getAchievements()`'s formatting and
+ * never invents anything beyond what's passed in.
+ */
+export function getAchievementSubsetFollowUp(lang: Lang, matches: Achievement[]): string {
+  if (!matches.length) {
+    return lang === "id"
+      ? "Aku belum nemu achievement spesifik yang cocok sama itu di data portfolio Gill."
+      : "I couldn't match that to a specific achievement in Gill's portfolio data.";
+  }
+  const lines = matches.map((a) => {
+    const bits = [a.title];
+    if (a.subtitle) bits.push(`— ${a.subtitle}`);
+    if (a.period) bits.push(`(${a.period})`);
+    return `• ${bits.join(" ")}`;
+  });
+  return lines.join("\n");
+}
+
+/**
+ * "itu kapan?" / "when was that?" follow-up. Only ever reports a
+ * `period` that's actually on file (e.g. "Grade 12") — for entries
+ * with no `period` set, says plainly that no date/period is listed
+ * rather than inventing one (see PROJECT_CONTEXT.md hallucination-
+ * prevention rule, same as `getAchievementRankFollowUp`).
+ */
+export function getAchievementPeriodFollowUp(lang: Lang, matches: Achievement[]): string {
+  if (!matches.length) {
+    return lang === "id"
+      ? "Aku belum yakin achievement mana yang dimaksud, jadi aku belum bisa kasih periode waktunya."
+      : "I'm not sure which achievement that refers to, so I can't give a period for it yet.";
+  }
+  const lines = matches.map((a) => {
+    const label = `${a.title}${a.subtitle ? ` — ${a.subtitle}` : ""}`;
+    if (a.period) {
+      return lang === "id" ? `• ${label}: ${a.period}.` : `• ${label}: ${a.period}.`;
+    }
+    return lang === "id"
+      ? `• ${label}: belum ada periode/tanggal spesifik yang tercantum di portfolio.`
+      : `• ${label}: no specific period/date is listed in the portfolio yet.`;
+  });
   return lines.join("\n");
 }
 

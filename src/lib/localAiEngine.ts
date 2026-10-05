@@ -1,6 +1,7 @@
-import type { AiAnswer, AiConversationContext } from "@/types";
+import type { Achievement, AiAnswer, AiConversationContext } from "@/types";
 import { detectLanguage, type Lang } from "@/lib/lang";
 import { expandChatShorthand, fuzzyIncludesAny } from "@/lib/textMatch";
+import { achievements } from "@data/achievements";
 import {
   getGreeting,
   getEmptyInputPrompt,
@@ -17,6 +18,8 @@ import {
   getSmartLabDeployment,
   getAchievements,
   getAchievementRankFollowUp,
+  getAchievementSubsetFollowUp,
+  getAchievementPeriodFollowUp,
   getContact,
   getEmployerFallback,
   getPklFallback,
@@ -24,6 +27,42 @@ import {
   getUnknownFallback,
   projectOrder,
 } from "@data/aiKnowledge";
+
+/**
+ * Conversation-context fix: which specific achievement(s) a short
+ * narrowing follow-up ("yang nasional?", "yang mikrotik?", "yang
+ * sertifikat?", "yang medali?"...) is asking about, matched against
+ * the same `achievements.ts` source `getAchievements()` already
+ * reads. Deliberately small and additive (same spirit as
+ * `textMatch.ts`'s `SYNONYMS`) — each entry only narrows an existing
+ * achievement down further, never invents a new one.
+ */
+const ACHIEVEMENT_FILTERS: Array<{ keywords: string[]; predicate: (a: Achievement) => boolean }> = [
+  {
+    keywords: ["nasional", "national"],
+    predicate: (a) => a.category === "competition" || /national/i.test(a.subtitle ?? ""),
+  },
+  {
+    keywords: ["mikrotik", "mtik"],
+    predicate: (a) => /mikrotik/i.test(a.title),
+  },
+  {
+    keywords: ["sertifikat", "certificate", "certification", "sertif"],
+    predicate: (a) => a.category === "certification",
+  },
+  {
+    keywords: ["medali", "medal"],
+    predicate: (a) => a.category === "medal",
+  },
+  {
+    keywords: ["pancasila"],
+    predicate: (a) => /pancasila/i.test(a.subtitle ?? ""),
+  },
+  {
+    keywords: ["biology", "biologi"],
+    predicate: (a) => /biology/i.test(a.subtitle ?? ""),
+  },
+];
 
 /**
  * Gill AI — local/rule-based engine.
@@ -165,7 +204,54 @@ export async function answerLocally(rawInput: string, context: AiConversationCon
       "placement", "placed", "ranking",
     ])
   ) {
-    return { text: getAchievementRankFollowUp(lang), lang, topic: "achievements" };
+    const competition = achievements.find((a) => a.category === "competition");
+    const medals = achievements.filter((a) => a.category === "medal");
+    return {
+      text: getAchievementRankFollowUp(lang),
+      lang,
+      topic: "achievements",
+      achievementIds: [competition?.id, ...medals.map((m) => m.id)].filter((id): id is string => Boolean(id)),
+    };
+  }
+
+  // "itu kapan?" / "when was that?" — resolve against whichever
+  // achievement(s) were most recently surfaced (context.lastAchievementIds),
+  // never inventing a date that isn't on file. Checked before the
+  // narrowing-subset filters below, since "kapan"/"when" isn't itself
+  // a narrowing term.
+  if (
+    context.lastTopic === "achievements" &&
+    includesAny(input, ["kapan", "when was", "when did", "what year", "tahun berapa"])
+  ) {
+    const known = context.lastAchievementIds?.length
+      ? achievements.filter((a) => context.lastAchievementIds!.includes(a.id))
+      : achievements; // no specific item tracked yet — report on everything rather than refuse
+    return {
+      text: getAchievementPeriodFollowUp(lang, known),
+      lang,
+      topic: "achievements",
+      achievementIds: known.map((a) => a.id),
+    };
+  }
+
+  // Narrowing follow-ups — "yang nasional?" / "yang mikrotik?" / "yang
+  // sertifikat?" / "yang medali?" right after an achievements answer.
+  // Filters the same `achievements.ts` source instead of re-dumping
+  // the whole list, so unrelated medals don't bleed into a
+  // MikroTik-specific follow-up (see PROJECT_CONTEXT.md /
+  // knowledge-retrieval fix notes).
+  if (context.lastTopic === "achievements") {
+    for (const filter of ACHIEVEMENT_FILTERS) {
+      if (includesAny(input, filter.keywords)) {
+        const matches = achievements.filter(filter.predicate);
+        return {
+          text: getAchievementSubsetFollowUp(lang, matches),
+          lang,
+          topic: "achievements",
+          achievementIds: matches.map((a) => a.id),
+        };
+      }
+    }
   }
 
   // Hallucination-prevention guardrails — answered explicitly rather
@@ -197,7 +283,7 @@ export async function answerLocally(rawInput: string, context: AiConversationCon
       "prestasi", "penghargaan", "medali", "sertifikat", "lomba", "olimpiade", "juara",
     ])
   ) {
-    return { text: getAchievements(lang), lang, topic: "achievements" };
+    return { text: getAchievements(lang), lang, topic: "achievements", achievementIds: achievements.map((a) => a.id) };
   }
 
   if (

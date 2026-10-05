@@ -382,6 +382,16 @@ export interface ExperienceCategoryMeta {
 export interface AiConversationContext {
   lastTopic?: string;
   lastProjectId?: string;
+  /**
+   * Conversation-context fix: IDs (from `src/data/achievements.ts`) of
+   * whichever achievement(s) were most recently surfaced, so a short
+   * narrowing follow-up like "itu kapan?" can resolve back to the
+   * specific achievement(s) just discussed instead of only knowing
+   * the broad `lastTopic: "achievements"`. Reconstructed per-request
+   * by replaying history — see `deriveLocalContext` in
+   * `src/pages/api/chat.ts` — same as `lastProjectId`.
+   */
+  lastAchievementIds?: string[];
   /** The language ("en" | "id") the assistant last replied in, used only as a tiebreaker for ambiguous/short follow-ups. */
   lang?: "en" | "id";
 }
@@ -390,6 +400,8 @@ export interface AiAnswer {
   text: string;
   topic?: string;
   projectId?: string;
+  /** IDs of the achievement(s) this answer was about, if any — see `AiConversationContext.lastAchievementIds`. */
+  achievementIds?: string[];
   /** The language ("en" | "id") this answer was written in. */
   lang?: "en" | "id";
 }
