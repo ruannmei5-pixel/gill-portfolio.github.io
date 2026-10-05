@@ -40,9 +40,11 @@ const MAX_MESSAGE_LENGTH = 2000; // generous vs. the UI's own 300-char textarea 
 const MAX_HISTORY_MESSAGES = 40; // hard cap on request size
 const MESSAGES_SENT_TO_PROVIDER = 16; // most recent turns actually forwarded to the model, to bound token usage/cost
 const PROVIDER_TIMEOUT_MS = 20_000;
-const DEFAULT_MODEL = "claude-3-5-haiku-latest";
+const DEFAULT_ANTHROPIC_MODEL = "claude-3-5-haiku-latest";
+const DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
+const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -195,6 +197,54 @@ async function callAnthropic(messages: ChatMessage[], apiKey: string, model: str
   }
 }
 
+interface OpenAIChatResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+}
+
+async function callNvidia(messages: ChatMessage[], apiKey: string, model: string, systemPrompt: string): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(NVIDIA_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 600,
+        temperature: 0.4,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      console.error(`[api/chat] NVIDIA API error ${response.status}: ${detail.slice(0, 500)}`);
+      throw new Error("provider_error");
+    }
+
+    let data: OpenAIChatResponse;
+    try {
+      data = (await response.json()) as OpenAIChatResponse;
+    } catch {
+      throw new Error("provider_malformed_json");
+    }
+
+    const text = data.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error("provider_malformed_shape");
+    return text;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   if (request.headers.get("content-type")?.includes("application/json") !== true) {
     return safeError("Expected application/json.", 415);
@@ -229,7 +279,11 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const apiKey = import.meta.env.AI_API_KEY;
-  const model = import.meta.env.AI_MODEL || DEFAULT_MODEL;
+  const provider = (
+    import.meta.env.AI_PROVIDER || (apiKey?.startsWith("nvapi-") ? "nvidia" : "anthropic")
+  ).toLowerCase();
+  const model =
+    import.meta.env.AI_MODEL || (provider === "nvidia" ? DEFAULT_NVIDIA_MODEL : DEFAULT_ANTHROPIC_MODEL);
 
   try {
     if (!apiKey) {
@@ -278,7 +332,11 @@ export const POST: APIRoute = async ({ request }) => {
         ? buildKnowledgeBaseText()
         : buildRetrievedContextText(retrieval);
 
-    const text = await callAnthropic(trimmedHistory, apiKey, model, buildSystemPrompt(knowledgeContext));
+    const systemPrompt = buildSystemPrompt(knowledgeContext);
+    const text =
+      provider === "nvidia"
+        ? await callNvidia(trimmedHistory, apiKey, model, systemPrompt)
+        : await callAnthropic(trimmedHistory, apiKey, model, systemPrompt);
     const lang = detectLanguage(history[history.length - 1].content);
     return jsonResponse({ text, lang }, 200);
   } catch (error) {

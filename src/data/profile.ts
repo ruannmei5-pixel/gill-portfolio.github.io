@@ -27,9 +27,9 @@ export const profile: Profile = {
   ],
   contact: {
     // TODO: replace these placeholders with real contact details
-    email: "emailkamu@gmail.com",
-    github: "https://github.com/username",
-    linkedin: "https://linkedin.com/in/username",
-    instagram: "https://instagram.com/username",
+    email: "ragilvahlevi030@gmail.com",
+    github: "https://github.com/ruannmei5-pixel",
+    linkedin: "",
+    instagram: "https://www.instagram.com/ragil_v2307?stkn=MWNnZ3pvYTRuMWNvcw==",
   },
 };

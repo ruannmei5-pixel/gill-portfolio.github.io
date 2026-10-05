@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly AI_API_KEY?: string;
   /** Server-only, optional. Overrides the default model in src/pages/api/chat.ts. */
   readonly AI_MODEL?: string;
+  /** Server-only, optional. "nvidia" | "anthropic". Kalau kosong, ditebak dari awalan key ("nvapi-" = nvidia). */
+  readonly AI_PROVIDER?: string;
 }
 
 interface ImportMeta {

@@ -8,12 +8,14 @@ export interface Props {
 
 const { class: className = "" } = Astro.props;
 const greeting = getGreeting();
+// Hanya 4 saran; hilang otomatis setelah pertanyaan pertama.
+const suggestions = quickQuestions.slice(0, 4);
 ---
 
 <TerminalWindow title="GILL AI" class={className}>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4 font-body">
     <div class="flex items-center justify-between gap-2">
-      <p class="font-mono text-[0.6875rem] text-ink-faint">Ask in English or Bahasa Indonesia — Gill AI follows your language.</p>
+      <p class="font-mono text-[0.6875rem] text-ink-faint">English / Bahasa Indonesia</p>
       <button
         type="button"
         id="ai-clear"
@@ -26,21 +28,29 @@ const greeting = getGreeting();
 
     <div
       id="ai-output"
-      class="max-h-96 space-y-3 overflow-y-auto pr-1"
+      class="min-h-[12rem] max-h-[28rem] space-y-4 overflow-y-auto pr-1"
       role="log"
       aria-live="polite"
       aria-atomic="false"
       aria-label="Conversation with Gill AI"
     >
-      <div class="flex gap-2" data-ai-row>
-        <span class="shrink-0 text-signal" aria-hidden="true">AI:</span>
-        <p class="min-w-0 flex-1 whitespace-pre-wrap break-words text-ink-muted" data-ai-greeting>{greeting}</p>
+      <div class="flex gap-2.5">
+        <span
+          class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-signal-dim font-mono text-[0.625rem] text-signal-bright"
+          aria-hidden="true">AI</span
+        >
+        <p
+          class="min-w-0 max-w-[90%] whitespace-pre-wrap break-words rounded-md bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed text-ink"
+          data-ai-greeting
+        >
+          {greeting}
+        </p>
       </div>
     </div>
 
     <p
       id="ai-status"
-      class="hidden items-center gap-1 font-mono text-[0.6875rem] text-signal-bright"
+      class="hidden items-center gap-1 pl-[2.125rem] font-mono text-[0.6875rem] text-signal-bright"
       aria-hidden="true"
     >
       <span id="ai-status-label">Gill AI is thinking</span>
@@ -53,11 +63,11 @@ const greeting = getGreeting();
 
     <div class="flex flex-wrap gap-2" id="ai-quick-questions">
       {
-        quickQuestions.map((question) => (
+        suggestions.map((question) => (
           <button
             type="button"
             data-question={question}
-            class="rounded-sm border border-border-subtle px-2.5 py-1 text-left font-mono text-[0.6875rem] text-ink-muted transition-[color,border-color,transform] duration-200 hover:border-signal-dim hover:text-signal-bright motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0 motion-safe:active:scale-[0.96]"
+            class="rounded-full border border-border-subtle px-3 py-1.5 text-left text-xs text-ink-muted transition-[color,border-color,transform] duration-200 hover:border-signal-dim hover:text-signal-bright motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0 motion-safe:active:scale-[0.97]"
           >
             {question}
           </button>
@@ -65,32 +75,37 @@ const greeting = getGreeting();
       }
     </div>
 
-    <form id="ai-form" class="flex items-end gap-2" autocomplete="off">
+    <form
+      id="ai-form"
+      class="flex items-end gap-2 rounded-md border border-border-strong bg-void px-3 py-2 transition-colors duration-200 focus-within:border-signal-bright"
+      autocomplete="off"
+    >
       <label for="ai-input" class="sr-only">Ask something about Gill</label>
-      <span class="shrink-0 pb-1.5 text-signal" aria-hidden="true">→</span>
       <textarea
         id="ai-input"
         name="question"
         rows="1"
         maxlength="300"
-        class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-1.5 font-mono text-sm text-ink placeholder:text-ink-faint"
-        placeholder="Ask something about Gill… (Shift+Enter for a new line)"
+        class="min-w-0 flex-1 resize-none overflow-hidden bg-transparent py-1.5 font-body text-sm text-ink placeholder:text-ink-faint focus-visible:outline-none"
+        placeholder="Tanya sesuatu tentang Gill…"
         autocomplete="off"
         autocapitalize="off"
         autocorrect="off"
-        spellcheck="false"
-      ></textarea>
+        spellcheck="false"></textarea>
       <button
         type="submit"
         id="ai-send"
-        class="shrink-0 rounded-sm border border-border-strong px-3 py-1.5 font-mono text-xs text-ink transition-[color,border-color,transform] duration-200 hover:border-signal-dim hover:text-signal-bright motion-safe:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+        aria-label="Send"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-signal text-void transition-[background-color,transform] duration-200 hover:bg-signal-bright motion-safe:active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Send
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 8H13M9 4L13 8L9 12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </button>
     </form>
 
-    <p class="font-mono text-[0.6875rem] text-ink-faint">
-      Answers come from the verified information on this portfolio — nothing invented.
+    <p class="text-[0.6875rem] text-ink-faint">
+      Shift+Enter untuk baris baru · Jawaban berasal dari data portofolio yang terverifikasi.
     </p>
   </div>
 </TerminalWindow>
@@ -107,9 +122,10 @@ const greeting = getGreeting();
   const input = document.getElementById("ai-input") as HTMLTextAreaElement | null;
   const sendButton = document.getElementById("ai-send") as HTMLButtonElement | null;
   const clearButton = document.getElementById("ai-clear") as HTMLButtonElement | null;
+  const quickWrap = document.getElementById("ai-quick-questions");
   const quickButtons = document.querySelectorAll<HTMLButtonElement>("#ai-quick-questions button");
   const greetingEl = document.querySelector<HTMLParagraphElement>("[data-ai-greeting]");
-  const GREETING_TEXT = greetingEl?.textContent ?? "";
+  const GREETING_TEXT = greetingEl?.textContent?.trim() ?? "";
 
   const prefersReducedMotion =
     typeof window !== "undefined" && "matchMedia" in window
@@ -117,12 +133,6 @@ const greeting = getGreeting();
       : false;
 
   if (output && form && input && sendButton && clearButton) {
-    // In-memory only, scoped to this component instance / browser tab
-    // — no database, nothing persisted anywhere else. Reset on reload
-    // or on "Clear", same as the terminal's command history in
-    // Phase 08. `history` is what actually gets sent to `/api/chat`
-    // on every request, per the real-backend upgrade — the server is
-    // stateless, so the full conversation travels with each turn.
     let history: ChatMessage[] = [];
     let lang: "en" | "id" | undefined;
     let busy = false;
@@ -142,8 +152,6 @@ const greeting = getGreeting();
       return lang === "id" ? "Coba lagi" : "Retry";
     }
 
-    // Auto-grow the textarea up to a small cap so a multi-line
-    // question never pushes the rest of the widget off-screen.
     function autoResize() {
       input!.style.height = "auto";
       input!.style.height = `${Math.min(input!.scrollHeight, 120)}px`;
@@ -151,35 +159,31 @@ const greeting = getGreeting();
     input.addEventListener("input", autoResize);
     autoResize();
 
-    /**
-     * Appends one message row. When `animate` is true and the visitor
-     * hasn't asked for reduced motion, the AI's text is revealed
-     * progressively (word by word) to read like a streaming response
-     * — this project has no real streaming API to consume (see
-     * `src/lib/aiEngine.ts`'s architecture note), so this is a purely
-     * cosmetic client-side reveal over an already-complete answer,
-     * never a delay on when the real answer is ready.
-     */
     function appendMessage(role: "user" | "ai", text: string, animate = false): void {
       const row = document.createElement("div");
-      row.className = "flex gap-2 motion-safe:animate-fade-up";
+      row.className =
+        role === "ai"
+          ? "flex gap-2.5 motion-safe:animate-fade-up"
+          : "flex justify-end motion-safe:animate-fade-up";
 
-      const label = document.createElement("span");
-      label.className = role === "ai" ? "shrink-0 text-signal" : "shrink-0 text-ink-faint";
-      label.setAttribute("aria-hidden", "true");
-      label.textContent = role === "ai" ? "AI:" : "YOU:";
-      row.appendChild(label);
+      if (role === "ai") {
+        const avatar = document.createElement("span");
+        avatar.className =
+          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-signal-dim font-mono text-[0.625rem] text-signal-bright";
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = "AI";
+        row.appendChild(avatar);
+      }
 
       const bubble = document.createElement("p");
       bubble.className =
-        "min-w-0 flex-1 whitespace-pre-wrap break-words " + (role === "ai" ? "text-ink-muted" : "text-ink");
+        role === "ai"
+          ? "min-w-0 max-w-[90%] whitespace-pre-wrap break-words rounded-md bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed text-ink"
+          : "min-w-0 max-w-[85%] whitespace-pre-wrap break-words rounded-md border border-signal-dim bg-signal-wash px-3.5 py-2.5 text-sm leading-relaxed text-ink";
       row.appendChild(bubble);
       output!.appendChild(row);
 
-      // Every line is inserted via textContent/createTextNode only —
-      // never innerHTML — so neither typed input nor AI output can
-      // ever be interpreted as markup. Line breaks are real <br>
-      // elements, not raw HTML in a string.
+      // textContent / createTextNode only — never innerHTML.
       function writeLinesInstantly(target: HTMLElement, value: string) {
         const lines = value.split("\n");
         lines.forEach((line, i) => {
@@ -194,13 +198,7 @@ const greeting = getGreeting();
         return;
       }
 
-      // Progressive word-by-word reveal with a small blinking caret,
-      // capped at a short interval so it never reads as an artificial
-      // multi-second delay (PROMPT 15 section 7: "don't wait for the
-      // full response if streaming is available" — here, everything
-      // is already available locally, so the reveal itself is kept
-      // fast).
-      const words = text.split(/(\s+)/); // keep whitespace tokens so spacing is preserved
+      const words = text.split(/(\s+)/);
       const caret = document.createElement("span");
       caret.className = "ai-caret motion-safe:animate-pulse";
       caret.textContent = "▍";
@@ -231,11 +229,10 @@ const greeting = getGreeting();
       lastFailedQuestion = question;
 
       const retryRow = document.createElement("div");
-      retryRow.className = "flex gap-2 motion-safe:animate-fade-up";
+      retryRow.className = "flex gap-2.5 motion-safe:animate-fade-up";
       const spacer = document.createElement("span");
-      spacer.className = "shrink-0 text-signal";
+      spacer.className = "w-6 shrink-0";
       spacer.setAttribute("aria-hidden", "true");
-      spacer.textContent = "";
       retryRow.appendChild(spacer);
 
       const retryButton = document.createElement("button");
@@ -261,23 +258,15 @@ const greeting = getGreeting();
       status?.classList.toggle("flex", value);
     }
 
-    // A real network call (see `src/lib/aiEngine.ts` → `POST
-    // /api/chat`) can itself resolve quickly on a fast connection,
-    // which would make the "thinking" state above flash by too fast
-    // to register as an animation at all. A short, fixed minimum
-    // keeps it visibly smooth without ever padding out a genuinely
-    // slow response any further — see PROMPT 15 section 6, "avoid a
-    // long blank delay" / "must feel smooth".
     const MIN_THINKING_MS = 380;
-
-    // Bounds how much history is kept client-side/sent per request —
-    // the server independently enforces its own cap too (defense in
-    // depth), this just keeps the payload small during a long session.
     const MAX_HISTORY_MESSAGES = 40;
 
     async function handleAsk(raw: string) {
       const trimmed = raw.trim();
       if (!trimmed || busy) return;
+
+      // Saran pertanyaan disembunyikan setelah percakapan dimulai.
+      quickWrap?.classList.add("hidden");
 
       lang = detectLanguage(trimmed, lang);
       appendMessage("user", trimmed);
@@ -297,14 +286,6 @@ const greeting = getGreeting();
         history.push({ role: "assistant", content: result.text });
         appendMessage("ai", result.text, true);
       } catch {
-        // Covers any failure from `/api/chat` — network error,
-        // timeout, non-2xx status, or a malformed body. Never surface
-        // a raw error message, stack trace, or status code here. The
-        // user turn is popped back off `history` (the visible chat
-        // row stays — only the network-context array is rolled back)
-        // so a retry re-pushes it fresh instead of sending two
-        // consecutive "user" turns in a row, which a real provider's
-        // strict user/assistant alternation would reject.
         if (history[history.length - 1]?.role === "user") history.pop();
         appendErrorWithRetry(trimmed, lang);
       } finally {
@@ -320,9 +301,6 @@ const greeting = getGreeting();
       void handleAsk(value);
     });
 
-    // Enter → send. Shift+Enter → newline. A textarea doesn't submit
-    // its form on its own, so Enter is handled explicitly here; Shift+Enter
-    // is left alone so the browser's default newline behavior applies.
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -345,18 +323,8 @@ const greeting = getGreeting();
       lang = undefined;
       lastFailedQuestion = null;
       output.innerHTML = "";
-      const row = document.createElement("div");
-      row.className = "flex gap-2";
-      const label = document.createElement("span");
-      label.className = "shrink-0 text-signal";
-      label.setAttribute("aria-hidden", "true");
-      label.textContent = "AI:";
-      row.appendChild(label);
-      const bubble = document.createElement("p");
-      bubble.className = "min-w-0 flex-1 whitespace-pre-wrap break-words text-ink-muted";
-      bubble.textContent = GREETING_TEXT;
-      row.appendChild(bubble);
-      output.appendChild(row);
+      appendMessage("ai", GREETING_TEXT);
+      quickWrap?.classList.remove("hidden");
       input.focus();
     });
   }
