@@ -5,6 +5,17 @@ import Button from "@components/ui/Button.astro";
 import { profile } from "@data/profile";
 
 const { contact } = profile;
+
+const subject = encodeURIComponent("Halo Gill, saya melihat portofoliomu");
+const mailto = `mailto:${contact.email}?subject=${subject}`;
+const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contact.email)}&su=${subject}`;
+
+// Hanya tampilkan tombol yang linknya sudah terisi.
+const socials = [
+  { label: "LinkedIn", href: contact.linkedin },
+  { label: "GitHub", href: contact.github },
+  { label: "Instagram", href: contact.instagram },
+].filter((s) => Boolean(s.href));
 ---
 
 <SectionShell id="contact">
@@ -15,9 +26,31 @@ const { contact } = profile;
   />
 
   <div class="flex flex-wrap items-center gap-4">
-    <Button href={`mailto:${contact.email}`} variant="primary">Email</Button>
-    <Button href={contact.linkedin} variant="secondary">LinkedIn</Button>
-    <Button href={contact.github} variant="secondary">GitHub</Button>
-    <Button href={contact.instagram} variant="secondary">Instagram</Button>
+    <Button href={mailto} variant="primary" data-email-link data-gmail={gmail}>Email</Button>
+    {
+      socials.map((s) => (
+        <Button href={s.href} variant="secondary" target="_blank" rel="noopener noreferrer">
+          {s.label}
+        </Button>
+      ))
+    }
   </div>
+
+  <p class="mt-4 font-mono text-xs text-ink-faint">
+    atau salin langsung: <span class="text-ink-muted select-all">{contact.email}</span>
+  </p>
 </SectionShell>
+
+<script>
+  const link = document.querySelector<HTMLAnchorElement>("[data-email-link]");
+  if (link) {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    link.addEventListener("click", (event) => {
+      // Mobile: biarkan mailto: membuka aplikasi email bawaan.
+      if (isMobile) return;
+      // Desktop: buka compose Gmail di tab baru.
+      event.preventDefault();
+      window.open(link.dataset.gmail, "_blank", "noopener");
+    });
+  }
+</script>

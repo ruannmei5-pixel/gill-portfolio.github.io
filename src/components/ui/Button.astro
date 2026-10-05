@@ -4,9 +4,12 @@ export interface Props {
   variant?: "primary" | "secondary" | "ghost";
   type?: "button" | "submit";
   class?: string;
+  target?: string;
+  rel?: string;
+  [key: `data-${string}`]: string | undefined;
 }
 
-const { href, variant = "primary", type = "button", class: className = "" } = Astro.props;
+const { href, variant = "primary", type = "button", class: className = "", ...rest } = Astro.props;
 
 const base =
   "inline-flex items-center justify-center gap-2 rounded px-5 py-3 text-sm font-medium " +
@@ -25,6 +28,6 @@ const classes = `${base} ${variants[variant]} ${className}`;
 const Tag = href ? "a" : "button";
 ---
 
-<Tag class={classes} href={href} type={!href ? type : undefined}>
+<Tag class={classes} href={href} type={!href ? type : undefined} {...rest}>
   <slot />
 </Tag>
